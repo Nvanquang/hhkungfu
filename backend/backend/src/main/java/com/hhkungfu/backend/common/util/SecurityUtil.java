@@ -26,7 +26,7 @@ public class SecurityUtil {
 
     private final JwtEncoder jwtEncoder;
 
-    @Value("${security.authentication.jwt.access-token-validity-in-seconds:86400}")
+    @Value("${security.authentication.jwt.access-token-validity-in-seconds:900}")
     private long accessTokenExpiration;
 
     @Value("${security.authentication.jwt.refresh-token-validity-in-seconds:604800}")

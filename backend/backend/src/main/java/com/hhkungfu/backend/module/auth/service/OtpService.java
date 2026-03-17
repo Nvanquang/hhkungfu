@@ -63,12 +63,22 @@ public class OtpService {
 
     @Transactional
     public boolean verifyOtp(User user, OtpType otpType, String otpCode) {
+        String attemptKey = RedisKeys.otpAttempt(user.getId().toString(), otpType.name());
+        Long attempts = redisTemplate.opsForValue().increment(attemptKey);
+        redisTemplate.expire(attemptKey, Duration.ofMinutes(10));
+
+        if (attempts != null && attempts > 5) {
+            throw new AuthException("Bạn đã nhập sai OTP quá nhiều lần.", HttpStatus.TOO_MANY_REQUESTS,
+                    ErrorConstants.OTP_RATE_LIMIT.getCode());
+        }
+
         return userOtpRepository
                 .findByUserIdAndOtpTypeAndIsUsedFalseAndExpiresAtAfter(user.getId(), otpType, ZonedDateTime.now())
                 .filter(otp -> otp.getOtpCode().equals(otpCode))
                 .map(otp -> {
                     otp.setUsed(true);
                     userOtpRepository.save(otp);
+                    redisTemplate.delete(attemptKey);
                     return true;
                 }).orElse(false);
     }

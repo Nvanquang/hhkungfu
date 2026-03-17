@@ -197,6 +197,10 @@ public class AuthService {
 
     public void logout(String userId) {
         redisTemplate.delete(RedisKeys.refresh(userId));
+        redisTemplate.opsForValue().set(
+                RedisKeys.userLogout(userId),
+                String.valueOf(java.time.Instant.now().toEpochMilli()),
+                Duration.ofDays(1));
     }
 
     @Transactional(readOnly = true)

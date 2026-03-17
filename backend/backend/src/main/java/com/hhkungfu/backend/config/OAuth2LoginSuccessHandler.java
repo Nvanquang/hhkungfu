@@ -61,8 +61,17 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         redisTemplate.opsForValue().set("refresh:" + user.getId(), refreshToken, Duration.ofDays(7));
 
+        org.springframework.http.ResponseCookie refreshTokenCookie = org.springframework.http.ResponseCookie.from("refresh_token", refreshToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(604800)
+                .build();
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
+
         String encodedToken = URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
-        String redirectUrl = clientAppUrl + "/oauth-success?token=" + encodedToken;
+        String redirectUrl = clientAppUrl + "/oauth-success#token=" + encodedToken;
 
         response.sendRedirect(redirectUrl);
     }

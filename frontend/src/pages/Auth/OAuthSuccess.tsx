@@ -8,7 +8,8 @@ export default function OAuthSuccess() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
+    const hash = location.hash.substring(1); // bỏ dấu #
+    const params = new URLSearchParams(hash);
     const token = params.get("token");
 
     if (!token) {

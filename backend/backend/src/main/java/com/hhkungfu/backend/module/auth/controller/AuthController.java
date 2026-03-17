@@ -166,7 +166,8 @@ public class AuthController {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .maxAge(accessTokenExpiration)
+                .sameSite("Strict")
+                .maxAge(refreshTokenExpiration)
                 .build();
     }
 

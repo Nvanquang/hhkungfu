@@ -1,0 +1,118 @@
+# Wireframe — Admin Dashboard
+**Route:** `/admin`
+**File:** `pages/admin/Dashboard.tsx`
+
+---
+
+## DESKTOP (≥1024px)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  SIDEBAR (w-64, fixed)          │  MAIN CONTENT (flex-1)                │
+│  ┌───────────────────────────┐  │                                        │
+│  │  🎬 hhkungfu Admin          │  │  ┌─────────────────────────────────┐  │
+│  │  ─────────────────────    │  │  │  Tổng quan hệ thống             │  │
+│  │  ● Dashboard          ←   │  │  │  Thứ 2, 10/03/2026              │  │
+│  │  ○ Anime               │  │  └─────────────────────────────────┘  │
+│  │  ○ Episodes / Video    │  │                                        │
+│  │  ○ Genre & Studio      │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│  │  ○ Users               │  │  │ 📺        │ │ 🎬        │ │ 👥        │ │ 👁        │
+│  │  ○ Analytics           │  │  │  350      │ │  8,200    │ │  12,400   │ │  5.8M     │
+│  │  ─────────────────────    │  │  │  Anime    │ │  Tập phim │ │  Users    │ │  Lượt xem │
+│  │  avatar  Admin User    │  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘
+│  │  [Đăng xuất]           │  │                                        │
+│  └───────────────────────────┘  │  ┌──────────────────────┐ ┌──────────────────────┐
+│                                  │  │  Hôm nay              │ │  Job Transcode        │
+│                                  │  │  +45 users mới        │ │  ┌──────────────────┐ │
+│                                  │  │  +28,000 lượt xem     │ │  │ ● 2 đang chạy    │ │
+│                                  │  │                        │ │  │ ○ 5 hoàn thành   │ │
+│                                  │  │  ▲ 12% so hôm qua     │ │  │ ✕ 1 thất bại     │ │
+│                                  │  └──────────────────────┘ │  └──────────────────┘ │
+│                                  │                            └──────────────────────┘
+│                                  │                                        │
+│                                  │  ┌──────────────────────────────────────────────┐ │
+│                                  │  │  Top Anime (lượt xem 7 ngày qua)             │ │
+│                                  │  │  ─────────────────────────────────────────   │ │
+│                                  │  │  #  Tên                   Views    Trạng thái│ │
+│                                  │  │  1  Naruto Shippuden      42,000   COMPLETED  │ │
+│                                  │  │  2  Jujutsu Kaisen        38,500   ONGOING    │ │
+│                                  │  │  3  One Piece             35,200   ONGOING    │ │
+│                                  │  │  4  Attack on Titan       29,800   COMPLETED  │ │
+│                                  │  │  5  Demon Slayer          27,100   COMPLETED  │ │
+│                                  │  │                      [Xem báo cáo đầy đủ →]  │ │
+│                                  │  └──────────────────────────────────────────────┘ │
+│                                  │                                        │
+│                                  │  ┌──────────────────────────────────────────────┐ │
+│                                  │  │  Hoạt động gần đây                           │ │
+│                                  │  │  ─────────────────────────────────────────   │ │
+│                                  │  │  🎬  Tập 5 JJK  →  READY          10 phút   │ │
+│                                  │  │  👤  user@mail.com đăng ký         25 phút   │ │
+│                                  │  │  🎬  Tập 4 JJK  →  READY          1 giờ     │ │
+│                                  │  │  ⚠️  Transcode thất bại: ep#203   2 giờ     │ │
+│                                  │  └──────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## MOBILE (< 768px)
+
+```
+┌──────────────────────────────────┐
+│  ☰  hhkungfu Admin                 │  ← Hamburger mở drawer
+├──────────────────────────────────┤
+│  Tổng quan · 10/03/2026          │
+├──────────────────────────────────┤
+│  ┌─────────┐  ┌─────────┐        │
+│  │ 📺 350  │  │ 🎬 8.2K │        │  ← 2 cột
+│  │ Anime   │  │ Tập phim│        │
+│  └─────────┘  └─────────┘        │
+│  ┌─────────┐  ┌─────────┐        │
+│  │ 👥 12K  │  │ 👁 5.8M │        │
+│  │ Users   │  │ Lượt xem│        │
+│  └─────────┘  └─────────┘        │
+├──────────────────────────────────┤
+│  Hôm nay                         │
+│  +45 users · +28K views · ▲12%   │
+├──────────────────────────────────┤
+│  Job Transcode                   │
+│  ● 2 đang chạy  ○ 5 xong  ✕ 1   │
+├──────────────────────────────────┤
+│  Top Anime tuần này              │
+│  ──────────────────────────────  │
+│  1  Naruto Shippuden    42,000   │
+│  2  Jujutsu Kaisen      38,500   │
+│  3  One Piece           35,200   │
+│             [Xem thêm]           │
+├──────────────────────────────────┤
+│  Hoạt động gần đây               │
+│  🎬 Tập 5 JJK → READY  10 phút  │
+│  👤 user@mail.com đăng ký 25p   │
+│  ⚠️ Transcode lỗi ep#203  2h   │
+└──────────────────────────────────┘
+
+--- DRAWER (khi mở hamburger) ---
+┌──────────────────────────────────┐
+│  ✕  hhkungfu Admin                 │
+│  ─────────────────────────────   │
+│  ● Dashboard                     │
+│  ○ Anime                         │
+│  ○ Episodes / Video              │
+│  ○ Genre & Studio                │
+│  ○ Users                         │
+│  ○ Analytics                     │
+│  ─────────────────────────────   │
+│  👤 Admin User  [Đăng xuất]      │
+└──────────────────────────────────┘
+```
+
+---
+
+## Ghi Chú Thiết Kế
+
+- **Sidebar** fixed bên trái trên desktop, ẩn thành drawer trên mobile
+- **4 stat cards** hàng đầu: dùng icon + số to + label nhỏ, background card nhẹ
+- **"Job Transcode" card** hiển thị realtime — badge màu: xanh (running), xám (done), đỏ (failed)
+- **Top Anime table** tối đa 5 dòng, link sang `/admin/analytics` để xem full
+- **Hoạt động gần đây** tối đa 4–5 item, icon phân biệt loại event (video/user/warning)
+- Màu badge trạng thái: `ONGOING` = xanh dương, `COMPLETED` = xám, `UPCOMING` = vàng

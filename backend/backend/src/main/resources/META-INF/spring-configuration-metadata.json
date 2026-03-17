@@ -1,0 +1,68 @@
+{
+  "properties": [
+    {
+      "name": "spring.application.client-app-url",
+      "type": "java.lang.String",
+      "description": "URL of the client application"
+    },
+    {
+      "name": "spring.jpa.properties.hibernate.format_sql",
+      "type": "java.lang.Boolean",
+      "description": "Whether to format SQL"
+    },
+    {
+      "name": "payment.vnpay.tmn-code",
+      "type": "java.lang.String",
+      "description": "VNPay terminal code"
+    },
+    {
+      "name": "payment.vnpay.secret-key",
+      "type": "java.lang.String",
+      "description": "VNPay secret key"
+    },
+    {
+      "name": "payment.vnpay.vnp_PayUrl",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "payment.vnpay.vnp_ReturnUrl",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "payment.vnpay.timeout",
+      "type": "java.lang.Integer"
+    },
+    {
+      "name": "cloudinary.cloud_name",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "cloudinary.api_key",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "cloudinary.api_secret",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "security.authentication.jwt.base64-secret",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "security.authentication.jwt.access-token-validity-in-seconds",
+      "type": "java.lang.Integer"
+    },
+    {
+      "name": "security.authentication.jwt.refresh-token-validity-in-seconds",
+      "type": "java.lang.Integer"
+    },
+    {
+      "name": "quangkhongbiet.upload-file.base-uri",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "quangkhongbiet.firebase.config-path",
+      "type": "java.lang.String"
+    }
+  ]
+} 

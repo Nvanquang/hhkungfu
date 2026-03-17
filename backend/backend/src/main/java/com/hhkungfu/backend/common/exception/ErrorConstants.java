@@ -1,0 +1,29 @@
+package com.hhkungfu.backend.common.exception;
+
+public enum ErrorConstants {
+    UNAUTHORIZED("UNAUTHORIZED"),
+    EMAIL_ALREADY_EXISTS("EMAIL_ALREADY_EXISTS"),
+    EMAIL_ALREADY_VERIFIED("EMAIL_ALREADY_VERIFIED"),
+    USER_NOT_FOUND("USER_NOT_FOUND"),
+    USERNAME_ALREADY_EXISTS("USERNAME_ALREADY_EXISTS"),
+    INVALID_CREDENTIALS("INVALID_CREDENTIALS"),
+    OTP_EXPIRED("OTP_EXPIRED"),
+    OTP_INVALID("OTP_INVALID"),
+    OTP_RATE_LIMIT("OTP_RATE_LIMIT"),
+    ACCOUNT_DISABLED("ACCOUNT_DISABLED"),
+    OAUTH_ACCOUNT("OAUTH_ACCOUNT"),
+    REFRESH_TOKEN_INVALID("REFRESH_TOKEN_INVALID"),
+    INVALID_TOKEN("INVALID_TOKEN"),
+    INVALID_PASSWORD("INVALID_PASSWORD"),
+    SAME_PASSWORD("SAME_PASSWORD");
+
+    private final String code;
+
+    ErrorConstants(String code) {
+        this.code = code;
+    }
+
+    public String getCode() {
+        return code;
+    }
+}

@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: hhkungfu
+    client-app-url: http://localhost:5173
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: ${DRIVER_CLASS_NAME}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MY_EMAIL}
+    password: ${MY_EMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+            redirect-uri: ${REDIRECT_URI}
+
+springdoc:
+    swagger-ui:
+        path: /swagger-ui.html
+        url: /v3/api-docs   #BẮT BUỘC: yêu cầu Swagger UI load đúng file JSON thật
+    api-docs:
+        enabled: true
+
+security:
+  authentication:
+    jwt:
+      base64-secret: ${BASE64-SECRET}
+      access-token-validity-in-seconds: ${ACCESS-TOKEN-VALIDITY-IN-SECONDS}
+      refresh-token-validity-in-seconds: ${REFRESH-TOKEN-VALIDITY-IN-SECONDS}

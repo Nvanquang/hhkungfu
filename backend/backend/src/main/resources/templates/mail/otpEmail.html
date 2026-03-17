@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác nhận OTP</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f4f2ee;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 300;
+            color: #1a1a1a;
+            padding: 48px 16px;
+        }
+
+        .wrapper {
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        /* Header bar */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 28px;
+            border-bottom: 1px solid #d0cdc8;
+            margin-bottom: 40px;
+        }
+
+        .brand {
+            font-family: 'DM Serif Display', serif;
+            font-size: 20px;
+            letter-spacing: 0.02em;
+            color: #1a1a1a;
+        }
+
+        .brand span {
+            color: #6b6560;
+        }
+
+        .header-tag {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #9a948e;
+            background: #e8e5e0;
+            padding: 4px 10px;
+            border-radius: 2px;
+        }
+
+        /* Main card */
+        .card {
+            background: #ffffff;
+            border: 1px solid #d0cdc8;
+            border-radius: 4px;
+            padding: 48px 44px;
+        }
+
+        .greeting {
+            font-family: 'DM Serif Display', serif;
+            font-size: 26px;
+            line-height: 1.3;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .intro {
+            font-size: 14px;
+            line-height: 1.75;
+            color: #5c5753;
+            margin-bottom: 36px;
+        }
+
+        /* OTP block */
+        .otp-label {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #9a948e;
+            margin-bottom: 10px;
+        }
+
+        .otp-block {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 36px;
+        }
+
+        .otp-code {
+            font-family: 'DM Serif Display', serif;
+            font-size: 38px;
+            letter-spacing: 0.18em;
+            color: #1a1a1a;
+            border-bottom: 2px solid #1a1a1a;
+            padding-bottom: 6px;
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: #e8e5e0;
+            margin: 32px 0;
+        }
+
+        /* Notice */
+        .notice-block {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .notice-icon {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            border: 1px solid #d0cdc8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 2px;
+        }
+
+        .notice-icon svg {
+            width: 14px;
+            height: 14px;
+            stroke: #6b6560;
+        }
+
+        .notice-text {
+            font-size: 13px;
+            line-height: 1.7;
+            color: #6b6560;
+        }
+
+        .notice-text strong {
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        /* Footer */
+        .footer {
+            padding-top: 28px;
+            margin-top: 40px;
+            border-top: 1px solid #d0cdc8;
+        }
+
+        .sign-off {
+            font-size: 13px;
+            color: #5c5753;
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+
+        .sign-off strong {
+            display: block;
+            font-family: 'DM Serif Display', serif;
+            font-size: 15px;
+            font-weight: normal;
+            color: #1a1a1a;
+            margin-top: 4px;
+        }
+
+        .site-link {
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            color: #9a948e;
+        }
+
+        .site-link a {
+            color: #5c5753;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+
+        <div class="header">
+            <div class="brand">HH<span>Kungfu</span></div>
+            <div class="header-tag">Bảo mật tài khoản</div>
+        </div>
+
+        <div class="card">
+            <div class="greeting">
+                Xin chào,<br>
+                <span th:text="${user.username}">Người dùng</span>
+            </div>
+
+            <p class="intro">
+                Chúng tôi nhận được yêu cầu xác thực từ tài khoản của bạn.<br>
+                Vui lòng sử dụng mã dưới đây để tiếp tục.
+            </p>
+
+            <div class="otp-label">Mã xác thực OTP</div>
+            <div class="otp-block">
+                <div class="otp-code" th:text="${otpCode}">000000</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="notice-block">
+                <div class="notice-icon">
+                    <svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                </div>
+                <div class="notice-text">
+                    Mã này có hiệu lực trong <strong>10 phút</strong>. Nếu bạn không thực hiện yêu cầu này, hãy bỏ qua
+                    email và đảm bảo tài khoản của bạn an toàn. <strong>Không chia sẻ mã này cho bất kỳ ai.</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="sign-off">
+                Trân trọng,
+                <strong>HHKungfu Team</strong>
+            </div>
+            <div class="site-link">
+                Trang chủ: <a th:href="${baseUrl}" th:text="${baseUrl}">https://hhkungfu.vn</a>
+            </div>
+        </div>
+
+    </div>
+</body>
+
+</html>

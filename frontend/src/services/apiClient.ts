@@ -12,10 +12,10 @@ export const api = axios.create({
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
-  reject: (err: any) => void;
+  reject: (err: unknown) => void;
 }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -41,8 +41,8 @@ api.interceptors.response.use(
     return res;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as any;
-    const errData = error.response?.data as any;
+    const originalRequest = error.config as (typeof error.config & { _retry?: boolean }) | undefined;
+    const errData: unknown = error.response?.data;
 
     // Do not show error toast for background auth requests or 401 Unauthorized (except login)
     // 401s are handled silently by the token refresh flow
@@ -56,15 +56,15 @@ api.interceptors.response.use(
 
     if (shouldShowToast) {
       // Show error toast when BE returns ErrorResponse (success, error, timestamp)
-      if (errData && Object.prototype.hasOwnProperty.call(errData, "error")) {
-        const e = errData.error;
+      if (errData && typeof errData === "object" && Object.prototype.hasOwnProperty.call(errData, "error")) {
+        const e = (errData as { error?: unknown }).error;
         const message =
           typeof e === "string"
             ? e
-            : e?.message && typeof e.message === "string"
-              ? e.message
-              : e?.code
-                ? String(e.code)
+            : e && typeof e === "object" && "message" in e && typeof (e as { message?: unknown }).message === "string"
+              ? String((e as { message?: unknown }).message)
+              : e && typeof e === "object" && "code" in e
+                ? String((e as { code?: unknown }).code)
                 : "Đã xảy ra lỗi. Vui lòng thử lại.";
         toast.error(message);
       } else if (error.response?.status && error.response.status >= 400) {
@@ -104,8 +104,11 @@ api.interceptors.response.use(
           { withCredentials: true } // Ensure cookies are sent
         );
 
-        if (res.data?.success && res.data?.data) {
-          const { accessToken } = res.data.data;
+        const payload: unknown = res.data;
+        if (payload && typeof payload === "object" && (payload as { success?: unknown }).success && "data" in payload) {
+          const data = (payload as { data?: unknown }).data;
+          const accessToken = data && typeof data === "object" && "accessToken" in data ? (data as { accessToken?: unknown }).accessToken : null;
+          if (typeof accessToken !== "string") throw new Error("Invalid refresh token response");
           // Update zustand store
           useAuthStore.getState().setToken(accessToken);
           

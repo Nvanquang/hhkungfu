@@ -27,7 +27,7 @@ export const useAuthInit = () => {
         } else {
            logout();
         }
-      } catch (err) {
+      } catch {
          // Attempted to fetch me, failed (likely no valid refresh token either)
          logout();
       } finally {

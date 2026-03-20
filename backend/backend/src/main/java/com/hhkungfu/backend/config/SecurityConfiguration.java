@@ -47,12 +47,13 @@ public class SecurityConfiguration {
                                                                 "/api/v1/auth/reset-password",
                                                                 "/api/v1/auth/oauth2/**",
                                                                 "/oauth2/**",
-                                                                "/login/oauth2/**")
+                                                                "/login/oauth2/**",
+                                                                "/swagger-ui/**",
+                                                                "/swagger-ui.html",
+                                                                "/v3/api-docs/**")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
                                 .oauth2Login(oauth2 -> oauth2
-                                                // .userInfoEndpoint(userInfo ->
-                                                // userInfo.userService(oAuth2UserService))
                                                 .successHandler(oAuth2LoginSuccessHandler)
                                                 .failureHandler(oAuth2LoginFailureHandler))
                                 .oauth2ResourceServer(oauth2 -> oauth2

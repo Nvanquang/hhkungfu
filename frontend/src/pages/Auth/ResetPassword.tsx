@@ -32,7 +32,12 @@ type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
 export default function ResetPassword() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [email] = useState((location.state as any)?.email || "");
+  const [email] = useState(() => {
+    const state: unknown = location.state;
+    return state && typeof state === "object" && "email" in state && typeof (state as { email?: unknown }).email === "string"
+      ? String((state as { email?: unknown }).email)
+      : "";
+  });
   const [otpCode, setOtpCode] = useState("");
   const [globalError, setGlobalError] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -63,6 +68,12 @@ export default function ResetPassword() {
         passwordStrength <= 50 ? "Trung bình" :
           passwordStrength <= 75 ? "Tốt" : "Mạnh";
 
+  type HttpError = {
+    response?: {
+      data?: { error?: { code?: string; message?: string } | string };
+    };
+  };
+
   const onSubmit = async (data: ResetPasswordData) => {
     if (otpCode.length !== 6) {
       setGlobalError("Vui lòng nhập đủ 6 số OTP.");
@@ -78,8 +89,10 @@ export default function ResetPassword() {
       const result = await authService.resetPassword({ email, otpCode, newPassword: data.newPassword });
       toast.success(result.message);
       setIsSuccess(true);
-    } catch (error: any) {
-      const code = error.response?.data?.error?.code;
+    } catch (error: unknown) {
+      const e = error as HttpError;
+      const code = typeof e.response?.data?.error === "object" ? e.response?.data?.error?.code : undefined;
+      const msg = typeof e.response?.data?.error === "object" ? e.response?.data?.error?.message : e.response?.data?.error;
       if (code === "OTP_INVALID") {
         setGlobalError("Mã xác thực không đúng hoặc đã dùng.");
       } else if (code === "OTP_EXPIRED") {
@@ -87,9 +100,8 @@ export default function ResetPassword() {
       } else if (code === "WEAK_PASSWORD") {
         setGlobalError("Mật khẩu không đủ mạnh.");
       } else {
-        const errMsg = error.response?.data?.error?.message || error.response?.data?.error;
-        if (typeof errMsg === "string") {
-            setGlobalError(errMsg);
+        if (typeof msg === "string") {
+            setGlobalError(msg);
         } else {
             setGlobalError("Đã xảy ra lỗi. Vui lòng thử lại.");
         }

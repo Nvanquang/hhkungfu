@@ -40,19 +40,28 @@ export default function ForgotPassword() {
 
   const { formState: { isSubmitting } } = form;
 
+  type HttpError = {
+    response?: {
+      data?: { error?: { code?: string; message?: string } | string };
+    };
+  };
+
   const onSubmit = async (data: ForgotPasswordData) => {
     try {
       setGlobalError("");
       const result = await authService.forgotPassword(data);
       toast.success(result.message);
       setSuccessEmail(data.email);
-    } catch (error: any) {
-      if (error.response?.data?.error?.code === "OTP_RATE_LIMIT") {
+    } catch (error: unknown) {
+      const e = error as HttpError;
+      const code = typeof e.response?.data?.error === "object" ? e.response?.data?.error?.code : undefined;
+      const msg = typeof e.response?.data?.error === "object" ? e.response?.data?.error?.message : e.response?.data?.error;
+
+      if (code === "OTP_RATE_LIMIT") {
         setGlobalError("Gửi quá nhiều lần. Vui lòng đợi.");
       } else {
-        const errMsg = error.response?.data?.error?.message || error.response?.data?.error;
-        if (typeof errMsg === "string") {
-            setGlobalError(errMsg);
+        if (typeof msg === "string") {
+            setGlobalError(msg);
         } else {
             setGlobalError("Đã xảy ra lỗi. Vui lòng thử lại.");
         }

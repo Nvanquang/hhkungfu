@@ -110,7 +110,6 @@ Thông báo client: transcode hoàn thành
 
 | Thư viện | Vai trò |
 |---|---|
-| **Spring Data Elasticsearch** | Tích hợp Elasticsearch |
 | **PostgreSQL FTS** | Fallback full-text search |
 
 ### 1.8 Tiện Ích

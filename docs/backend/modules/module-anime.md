@@ -84,41 +84,6 @@ CREATE TABLE anime_studios (
 | `anime:featured` | String JSON | 600s | Danh sách featured |
 | `anime:trending` | Sorted Set | Không hết | score = view count 24h |
 
----
-
-## 2. Package Structure
-
-```
-com.hhkungfu.anime/
-├── controller/
-│   ├── AnimeController.java         -- GET/POST/PUT/DELETE /animes
-│   ├── GenreController.java         -- GET/POST /genres
-│   └── StudioController.java        -- GET /studios
-├── service/
-│   ├── AnimeService.java
-│   ├── AnimeSearchService.java      -- Elasticsearch queries
-│   ├── AnimeTrendingService.java    -- Redis sorted set
-│   └── GenreStudioService.java
-├── dto/
-│   ├── request/
-│   │   ├── AnimeCreateRequest.java
-│   │   └── AnimeUpdateRequest.java
-│   └── response/
-│       ├── AnimeSummaryDto.java     -- dùng cho listing (không có episodes)
-│       ├── AnimeDetailDto.java      -- dùng cho detail page (có genres, studios, ratings)
-│       ├── GenreDto.java
-│       └── StudioDto.java
-├── entity/
-│   ├── Anime.java
-│   ├── Genre.java
-│   ├── Studio.java
-│   ├── AnimeGenre.java
-│   └── AnimeStudio.java
-└── repository/
-    ├── AnimeRepository.java
-    ├── GenreRepository.java
-    └── StudioRepository.java
-```
 
 ---
 

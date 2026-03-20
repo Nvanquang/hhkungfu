@@ -44,6 +44,13 @@ export default function Login() {
 
   const { formState: { isSubmitting } } = form;
 
+  type HttpError = {
+    response?: {
+      status?: number;
+      data?: { error?: { code?: string; message?: string } | string };
+    };
+  };
+
   const onSubmit = async (data: LoginFormData) => {
     try {
       setGlobalError("");
@@ -51,16 +58,19 @@ export default function Login() {
       setAuth(result.data.user, result.data.accessToken);
       toast.success(result.message); // Hiển thị thông báo thành công từ backend
       navigate("/");
-    } catch (error: any) {
-      if (error.response?.data?.error?.code === "ACCOUNT_DISABLED") {
+    } catch (error: unknown) {
+      const e = error as HttpError;
+      const code = typeof e.response?.data?.error === "object" ? e.response?.data?.error?.code : undefined;
+      const msg = typeof e.response?.data?.error === "object" ? e.response?.data?.error?.message : e.response?.data?.error;
+
+      if (code === "ACCOUNT_DISABLED") {
         setGlobalError("Tài khoản bị tạm khóa bởi admin.");
-      } else if (error.response?.data?.error?.code === "UNAUTHORIZED" || error.response?.status === 401) {
+      } else if (code === "UNAUTHORIZED" || e.response?.status === 401) {
         setGlobalError("Email hoặc mật khẩu không đúng.");
       } else {
         // Fallback catch-all nếu backend trả về error message cụ thể
-        const errMsg = error.response?.data?.error?.message || error.response?.data?.error;
-        if (typeof errMsg === "string") {
-          setGlobalError(errMsg);
+        if (typeof msg === "string") {
+          setGlobalError(msg);
         } else {
           setGlobalError("Đã xảy ra lỗi khi đăng nhập.");
         }

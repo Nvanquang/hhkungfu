@@ -7,6 +7,7 @@ export interface UserDto {
   role: "USER" | "ADMIN";
   provider: "LOCAL" | "GOOGLE";
   emailVerified: boolean;
+  isVip?: boolean;
   isActive?: boolean;
   createdAt?: string;
 }

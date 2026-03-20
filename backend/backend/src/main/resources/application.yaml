@@ -21,6 +21,10 @@ spring:
     redis:
       host: localhost
       port: 6379
+    web:
+      pageable:
+        one-indexed-parameters: true
+        size-parameter: limit
 
   mail:
     host: smtp.gmail.com

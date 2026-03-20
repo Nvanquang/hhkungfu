@@ -15,7 +15,12 @@ import {
 export default function VerifyEmail() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [email] = useState((location.state as any)?.email || "");
+  const [email] = useState(() => {
+    const state: unknown = location.state;
+    return state && typeof state === "object" && "email" in state && typeof (state as { email?: unknown }).email === "string"
+      ? String((state as { email?: unknown }).email)
+      : "";
+  });
   const [otpCode, setOtpCode] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -24,13 +29,15 @@ export default function VerifyEmail() {
   const [canResend, setCanResend] = useState(false);
 
   useEffect(() => {
-    let timer: any;
+    let timer: ReturnType<typeof setInterval> | undefined;
     if (countdown > 0) {
       timer = setInterval(() => setCountdown(prev => prev - 1), 1000);
     } else {
       setCanResend(true);
     }
-    return () => clearInterval(timer);
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, [countdown]);
 
   const handleVerify = async () => {
@@ -49,16 +56,20 @@ export default function VerifyEmail() {
       await authService.verifyEmail({ email, otpCode });
       setSuccessMsg("Xác thực thành công! Đang chuyển trang...");
       setTimeout(() => navigate("/login"), 2000);
-    } catch (error: any) {
-      const code = error.response?.data?.error?.code;
+    } catch (error: unknown) {
+      type HttpError = {
+        response?: { data?: { error?: { code?: string; message?: string } | string } };
+      };
+      const e = error as HttpError;
+      const code = typeof e.response?.data?.error === "object" ? e.response?.data?.error?.code : undefined;
+      const msg = typeof e.response?.data?.error === "object" ? e.response?.data?.error?.message : e.response?.data?.error;
       if (code === "OTP_INVALID") {
         setErrorMsg("❌ Mã xác thực không đúng");
       } else if (code === "OTP_EXPIRED") {
         setErrorMsg("⏰ Mã đã hết hạn. Vui lòng gửi lại");
       } else {
-        const errMsg = error.response?.data?.error?.message || error.response?.data?.error;
-        if (typeof errMsg === "string") {
-            setErrorMsg(errMsg);
+        if (typeof msg === "string") {
+            setErrorMsg(msg);
         } else {
             setErrorMsg("Đã xảy ra lỗi khi xác thực.");
         }
@@ -77,8 +88,13 @@ export default function VerifyEmail() {
       setCountdown(45);
       setCanResend(false);
       setSuccessMsg("Đã gửi lại mã xác thực.");
-    } catch (error: any) {
-      if (error.response?.data?.error?.code === "OTP_RATE_LIMIT") {
+    } catch (error: unknown) {
+      type HttpError = {
+        response?: { data?: { error?: { code?: string } | string } };
+      };
+      const e = error as HttpError;
+      const code = typeof e.response?.data?.error === "object" ? e.response?.data?.error?.code : undefined;
+      if (code === "OTP_RATE_LIMIT") {
         setErrorMsg("Gửi quá nhiều lần. Vui lòng đợi.");
       } else {
         setErrorMsg("Lỗi khi gửi lại mã OTP.");

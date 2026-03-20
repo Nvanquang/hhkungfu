@@ -61,6 +61,12 @@ export default function Register() {
         passwordStrength <= 50 ? "Trung bình" :
           passwordStrength <= 75 ? "Tốt" : "Mạnh";
 
+  type HttpError = {
+    response?: {
+      data?: { error?: { code?: string; message?: string } | string };
+    };
+  };
+
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setGlobalError("");
@@ -69,16 +75,17 @@ export default function Register() {
       toast.success(result.message);
       // Redirect to verify email page
       navigate("/verify-email", { state: { email: data.email } });
-    } catch (error: any) {
-      const code = error.response?.data?.error?.code;
+    } catch (error: unknown) {
+      const e = error as HttpError;
+      const code = typeof e.response?.data?.error === "object" ? e.response?.data?.error?.code : undefined;
+      const msg = typeof e.response?.data?.error === "object" ? e.response?.data?.error?.message : e.response?.data?.error;
       if (code === "EMAIL_ALREADY_EXISTS") {
         setGlobalError("Email đã được sử dụng.");
       } else if (code === "USERNAME_ALREADY_EXISTS") {
         setGlobalError("Tên người dùng đã tồn tại.");
       } else {
-        const errMsg = error.response?.data?.error?.message || error.response?.data?.error;
-        if (typeof errMsg === "string") {
-          setGlobalError(errMsg);
+        if (typeof msg === "string") {
+          setGlobalError(msg);
         } else {
           setGlobalError("Đã xảy ra lỗi khi đăng ký. Vui lòng thử lại.");
         }

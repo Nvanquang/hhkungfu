@@ -7,25 +7,34 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
+    /* Netflix-inspired premium dark system (default) */
+    --background: 0 0% 8%;          /* ~ #141414 */
+    --foreground: 0 0% 96%;         /* softened near-white */
+
+    --card: 0 0% 12%;               /* ~ #1f1f1f */
+    --card-foreground: 0 0% 96%;
+
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 96%;
+
+    --primary: 357 90% 47%;         /* Netflix red-ish (#e50914) */
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 96%;
+
+    --muted: 0 0% 14%;
+    --muted-foreground: 240 4% 65%; /* ~ #a1a1aa */
+
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 96%;
+
+    --destructive: 0 72% 46%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 357 90% 52%;
     --radius: 0.75rem;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
@@ -43,25 +52,26 @@
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 6%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 6%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    /* Keep `.dark` identical for compatibility */
+    --background: 0 0% 8%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 357 90% 47%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 240 4% 65%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 96%;
+    --destructive: 0 72% 46%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 357 90% 52%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -88,6 +98,21 @@
   body {
     @apply bg-background text-foreground antialiased tracking-tight;
   }
+
+  /* Cinematic vignette + gentle center lift */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(1200px 700px at 50% 15%, rgba(255, 255, 255, 0.06), transparent 60%),
+      radial-gradient(900px 600px at 15% 30%, rgba(229, 9, 20, 0.06), transparent 55%),
+      radial-gradient(900px 600px at 85% 35%, rgba(229, 9, 20, 0.045), transparent 55%),
+      radial-gradient(1200px 900px at 50% 120%, rgba(0, 0, 0, 0.65), transparent 60%),
+      radial-gradient(1200px 900px at 50% -20%, rgba(0, 0, 0, 0.75), transparent 55%);
+  }
   
   html {
     @apply font-sans;
@@ -100,20 +125,27 @@
     @apply transition-all duration-300 ease-out;
   }
 
-  /* Premium Depth & Layering for Dark Mode */
-  .dark .bg-card, 
-  .dark [data-radix-popper-content-wrapper] > div,
-  .dark [role="dialog"] {
+  /* Premium Depth & Layering */
+  .bg-card,
+  [data-radix-popper-content-wrapper] > div,
+  [role="dialog"] {
     position: relative;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    box-shadow:
+      0 10px 34px rgba(0, 0, 0, 0.52),
+      inset 0 1px 0 rgba(255, 255, 255, 0.045) !important;
   }
   
-  .dark .bg-popover {
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  .bg-popover {
+    box-shadow:
+      0 14px 44px rgba(0, 0, 0, 0.62),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
   }
 
-  /* Input focus subtle glow */
-  .dark input:focus, .dark textarea:focus, .dark select:focus {
-    box-shadow: 0 0 0 1px hsl(var(--ring)), 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+  /* Input focus glow (accent) */
+  input:focus, textarea:focus, select:focus {
+    box-shadow:
+      0 0 0 1px hsl(var(--ring)),
+      0 0 0 4px rgba(229, 9, 20, 0.18),
+      0 10px 26px rgba(0, 0, 0, 0.45) !important;
   }
 }

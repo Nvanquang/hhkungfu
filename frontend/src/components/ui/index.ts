@@ -4,9 +4,27 @@
  */
 
 export { Button, buttonVariants } from "./button";
+export { Badge, badgeVariants } from "./badge";
 export { Input } from "./input";
 export { PasswordInput } from "./password-input";
 export { Label } from "./label";
+export { Skeleton } from "./skeleton";
+export { Separator } from "./separator";
+export { Spinner } from "./spinner";
+export { EmptyState } from "./empty-state";
+export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "./popover";
+export {
+  Command,
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandShortcut,
+  CommandSeparator,
+} from "./command";
+export { ScrollArea, ScrollBar } from "./scroll-area";
 export {
   Card,
   CardHeader,

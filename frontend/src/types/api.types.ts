@@ -1,9 +1,9 @@
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message?: string;
   data: T;
   timestamp?: string;
-  error?: any;
+  error?: unknown;
 }
 
 export interface PageResponse<T> {
@@ -18,6 +18,6 @@ export interface PageResponse<T> {
 
 export interface ErrorResponse {
   success: boolean;
-  error: any;
+  error: unknown;
   timestamp: string;
 }

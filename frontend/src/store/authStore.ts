@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import type { UserDto } from "@/types/user.types";
+import { authService } from "@/services/authService";
 
 interface AuthState {
   user: UserDto | null;
@@ -10,7 +11,7 @@ interface AuthState {
 
   setAuth: (user: UserDto, accessToken: string) => void;
   setToken: (accessToken: string) => void;
-  logout: () => void;
+  logout: (callApi?: boolean) => void;
   updateUser: (user: Partial<UserDto>) => void;
   setLoading: (loading: boolean) => void;
 }
@@ -42,9 +43,21 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 
     setToken: (accessToken) => set({ accessToken }),
 
-    logout: () => {
+    logout: async (callApi = true) => {
+      // If already logged out, do nothing
+      if (!get().isLoggedIn && !get().accessToken) return;
+
+      // Clear state immediately for best UX
       set({ user: null, accessToken: null, isLoggedIn: false, isLoading: false });
       authChannel.postMessage("logout");
+      
+      if (callApi) {
+        try {
+          await authService.logoutApi();
+        } catch (error) {
+          console.error("Logout API failed:", error);
+        }
+      }
     },
 
     updateUser: (data) => {

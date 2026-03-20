@@ -13,7 +13,6 @@ const VerifyEmail = lazy(() => import("@/pages/Auth/VerifyEmail"));
 const ForgotPassword = lazy(() => import("@/pages/Auth/ForgotPassword"));
 const ResetPassword = lazy(() => import("@/pages/Auth/ResetPassword"));
 const OAuthSuccess = lazy(() => import("@/pages/Auth/OAuthSuccess"));
-const Logout = lazy(() => import("@/pages/Auth/Logout"));
 
 // Lazy load feature pages
 const Home = lazy(() => import("@/pages/Home"));
@@ -36,18 +35,18 @@ function AppContent() {
             <Route path="/anime" element={<AnimeCatalog />} />
             <Route path="/anime/:slug" element={<AnimeDetail />} />
             <Route path="/search" element={<Search />} />
-            
+
             {/* Protected Routes Example */}
             <Route element={<ProtectedRoute />}>
-               <Route path="/dashboard" element={<div className="p-8">Protected Dashboard</div>} />
-               <Route path="/history" element={<div className="p-8">Lịch sử xem</div>} />
-               <Route path="/bookmarks" element={<div className="p-8">Danh sách yêu thích</div>} />
-               <Route path="/profile" element={<div className="p-8">Trang cá nhân</div>} />
-               <Route path="/settings" element={<div className="p-8">Cài đặt</div>} />
-               <Route path="/vip" element={<div className="p-8">VIP</div>} />
+              <Route path="/dashboard" element={<div className="p-8">Protected Dashboard</div>} />
+              <Route path="/history" element={<div className="p-8">Lịch sử xem</div>} />
+              <Route path="/bookmarks" element={<div className="p-8">Danh sách yêu thích</div>} />
+              <Route path="/profile" element={<div className="p-8">Trang cá nhân</div>} />
+              <Route path="/settings" element={<div className="p-8">Cài đặt</div>} />
+              <Route path="/vip" element={<div className="p-8">VIP</div>} />
             </Route>
           </Route>
-          
+
           {/* Auth Pages without MainLayout */}
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
@@ -56,7 +55,6 @@ function AppContent() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/oauth-success" element={<OAuthSuccess />} />
-            <Route path="/logout" element={<Logout />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

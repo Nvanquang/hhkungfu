@@ -1,16 +1,13 @@
-// Tab "Nhận xét": placeholder EmptyState báo tính năng đang phát triển.
-import { useNavigate } from "react-router-dom";
-import { EmptyState } from "@/components/ui";
+// Tab "Nhận xét": tích hợp hệ thống bình luận thực tế.
+import { CommentSection } from "@/components/comment/CommentSection";
 
 export function CommentsTab() {
-  const navigate = useNavigate();
+  // Demo với episodeId = 1 vì Watch page chưa được định vị chính xác trong flow hiện tại
+  const demoEpisodeId = 1;
+
   return (
-    <div className="flex justify-center py-12">
-      <EmptyState
-        title="Tính năng đang phát triển"
-        description="Hệ thống bình luận tương tác sẽ sớm ra mắt."
-        action={{ label: "Khám phá anime", onClick: () => navigate("/anime") }}
-      />
+    <div className="max-w-4xl mx-auto">
+      <CommentSection episodeId={demoEpisodeId} />
     </div>
   );
 }

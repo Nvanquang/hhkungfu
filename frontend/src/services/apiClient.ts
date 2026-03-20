@@ -111,7 +111,7 @@ api.interceptors.response.use(
           if (typeof accessToken !== "string") throw new Error("Invalid refresh token response");
           // Update zustand store
           useAuthStore.getState().setToken(accessToken);
-          
+
           processQueue(null, accessToken);
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return api(originalRequest);

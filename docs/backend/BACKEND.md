@@ -311,29 +311,31 @@ public class AnimeService {
 
 ```java
 // ✅ Controller chuẩn — mỏng, chỉ delegate xuống service
+@Slf4j
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/animes")
 @RequiredArgsConstructor
 @Tag(name = "Anime", description = "Anime catalog APIs")
 public class AnimeController {
 
     private final AnimeService animeService;
 
-    @GetMapping("/animes")
-    public ResponseEntity<ApiResponse<PageResponse<AnimeSummaryDto>>> getAnimes(@Filter Specification<StorageLocation> spec,
-            Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(
-            animeService.getAnimes(spec, pageable)
-        ));
+    @GetMapping
+    @ApiMessage("Get animes successfully")
+    @Operation(summary = "Get animes", description = "Get paginated list of animes")
+    @ApiResponse(responseCode = "200", description = "Animes retrieved successfully")
+    public ResponseEntity<PageResponse<AnimeSummaryDto>> getAnimes(
+            AnimeFilterRequest request) {
+        return ResponseEntity.ok(animeService.getAnimes(request));
     }
 
-    @PostMapping("/animes")
-    @PreAuthorize("hasRole('ADMIN')")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<ApiResponse<AnimeDto>> createAnime(
-            @Valid @RequestBody CreateAnimeRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success(animeService.create(request)));
+    @GetMapping("/{idOrSlug}")
+    @ApiMessage("Get anime details successfully")
+    @Operation(summary = "Get anime details", description = "Get anime details by ID or Slug")
+    @ApiResponse(responseCode = "200", description = "Anime details retrieved successfully")
+    public ResponseEntity<AnimeDetailDto> getAnimeDetails(@PathVariable("idOrSlug") String idOrSlug) {
+        log.info("REST request to get anime details: {}", idOrSlug);
+        return ResponseEntity.ok(animeService.getByIdOrSlug(idOrSlug));
     }
 }
 ```

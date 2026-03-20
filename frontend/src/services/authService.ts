@@ -32,10 +32,17 @@ export const authService = {
     return data.data;
   },
 
-  logout: async (): Promise<{ message: string }> => {
-    useAuthStore.getState().logout();
-    const { data } = await api.post<ApiResponse<{ message: string }>>("/auth/logout");
-    return data.data;
+  logoutApi: async (): Promise<void> => {
+    await api.post("/auth/logout");
+  },
+
+  logout: async (): Promise<void> => {
+    try {
+      await authService.logoutApi();
+    } finally {
+      // Clear store without triggering another API call
+      useAuthStore.getState().logout(false);
+    }
   },
 
   getMe: async (): Promise<UserDto> => {

@@ -3,8 +3,8 @@ import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, User, Crown, LogOut, Settings, Clock, Bookmark, X, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
-import { 
-  Button, 
+import {
+  Button,
   Input,
   DropdownMenu,
   DropdownMenuContent,
@@ -92,7 +92,7 @@ export function Header() {
   return (
     <>
       {/* Backdrop for focused search */}
-      <div 
+      <div
         className={cn(
           "fixed inset-0 bg-black/40 backdrop-blur-sm z-[45] transition-opacity duration-300 pointer-events-none opacity-0",
           isFocused && "opacity-100 pointer-events-auto"
@@ -103,8 +103,8 @@ export function Header() {
       <header
         className={cn(
           "fixed top-0 w-full z-50 transition-all duration-300",
-          isScrolled 
-            ? "h-16 bg-background/80 backdrop-blur-md border-b border-border/50 shadow-sm" 
+          isScrolled
+            ? "h-16 bg-background/80 backdrop-blur-md border-b border-border/50 shadow-sm"
             : "h-20 bg-gradient-to-b from-background/90 to-transparent",
           isFocused && "bg-background/95 backdrop-blur-lg border-b border-border/50 h-16 shadow-2xl"
         )}
@@ -117,7 +117,7 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6 flex-1 justify-center relative">
-            
+
             {/* Search Component */}
             <div className={cn(
               "relative w-full transition-all duration-300",
@@ -145,7 +145,7 @@ export function Header() {
                       autoComplete="off"
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                       {isSearchFetching && (
+                      {isSearchFetching && (
                         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                       )}
                       {searchQuery && (
@@ -161,7 +161,7 @@ export function Header() {
                   </form>
                 </PopoverAnchor>
 
-                <PopoverContent 
+                <PopoverContent
                   className="p-0 w-[var(--radix-popover-trigger-width)] mt-2 border-border/50 bg-card/95 backdrop-blur-xl shadow-2xl rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
                   align="start"
                   onOpenAutoFocus={(e) => e.preventDefault()}
@@ -170,7 +170,7 @@ export function Header() {
                     <CommandList className="max-h-none">
                       <ScrollArea className="h-full max-h-[70vh]">
                         {isSearchFetching && suggestions.length === 0 ? (
-                           <div className="p-4 space-y-4">
+                          <div className="p-4 space-y-4">
                             {Array.from({ length: 4 }).map((_, i) => (
                               <div key={i} className="flex gap-3 animate-pulse">
                                 <div className="w-12 h-16 rounded-md bg-muted shrink-0" />
@@ -191,9 +191,9 @@ export function Header() {
                               >
                                 <div className="relative w-12 h-16 rounded-md overflow-hidden bg-muted transition-transform group-hover:scale-105 shrink-0 shadow-sm">
                                   {anime.thumbnailUrl ? (
-                                    <img 
-                                      src={anime.thumbnailUrl} 
-                                      alt={anime.title as string} 
+                                    <img
+                                      src={anime.thumbnailUrl}
+                                      alt={anime.title as string}
                                       className="w-full h-full object-cover"
                                     />
                                   ) : (
@@ -214,7 +214,7 @@ export function Header() {
                                       {anime.year || "N/A"}{anime.totalEpisodes ? ` • ${anime.totalEpisodes} tập` : ""}
                                     </span>
                                     {anime.malScore && (
-                                       <span className="text-[11px] text-yellow-500 font-medium">
+                                      <span className="text-[11px] text-yellow-500 font-medium">
                                         ⭐ {anime.malScore}
                                       </span>
                                     )}
@@ -223,8 +223,8 @@ export function Header() {
                               </CommandItem>
                             ))}
                             <div className="p-2 pt-0">
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 className="w-full justify-center text-xs font-bold text-primary hover:bg-primary/10 transition-colors py-2 rounded-xl"
                                 onClick={() => handleSearch()}
                               >
@@ -261,8 +261,8 @@ export function Header() {
                     </div>
                     {genres.length > 0 ? (
                       genres.slice(0, 15).map((genre) => (
-                        <DropdownMenuItem 
-                          key={genre.id} 
+                        <DropdownMenuItem
+                          key={genre.id}
                           className="cursor-pointer font-medium hover:bg-primary/10 hover:text-primary rounded-lg transition-colors py-2"
                           onClick={() => navigate(`/anime?genre=${genre.slug}`)}
                         >
@@ -275,8 +275,8 @@ export function Header() {
                       </div>
                     )}
                     <DropdownMenuSeparator className="col-span-3 my-2 opacity-50" />
-                    <DropdownMenuItem 
-                      className="col-span-3 justify-center text-primary font-bold cursor-pointer hover:bg-primary/5 rounded-xl transition-all" 
+                    <DropdownMenuItem
+                      className="col-span-3 justify-center text-primary font-bold cursor-pointer hover:bg-primary/5 rounded-xl transition-all"
                       onClick={() => navigate('/anime')}
                     >
                       Tất cả thể loại →
@@ -294,8 +294,8 @@ export function Header() {
           {/* Actions (Desktop) */}
           <div className="hidden md:flex items-center gap-4 shrink-0">
             {!user?.isVip && !isFocused && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="gap-2 bg-gradient-to-r from-amber-500/10 to-orange-600/10 border-amber-500/20 hover:border-amber-500/50 text-amber-500 font-bold rounded-xl h-10 px-5 shadow-lg shadow-amber-500/5"
                 onClick={() => navigate('/vip')}
               >

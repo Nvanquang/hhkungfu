@@ -46,31 +46,7 @@ CREATE TRIGGER trg_comment_likes_sync
 
 ---
 
-## 2. Package Structure
-
-```
-com.hhkungfu.comment/
-├── controller/
-│   └── CommentController.java
-├── service/
-│   └── CommentService.java
-├── dto/
-│   ├── request/
-│   │   ├── CommentCreateRequest.java
-│   │   └── CommentUpdateRequest.java
-│   └── response/
-│       └── CommentDto.java
-├── entity/
-│   ├── Comment.java
-│   └── CommentLike.java
-└── repository/
-    ├── CommentRepository.java
-    └── CommentLikeRepository.java
-```
-
----
-
-## 3. API Endpoints
+## 2. API Endpoints
 
 ### GET `/api/v1/episodes/:episodeId/comments`
 **Auth:** Không cần (nhưng cần để biết `isLikedByMe`)
@@ -151,7 +127,7 @@ ORDER BY c.is_pinned DESC, c.{sort} {order}
 
 **Response `201`:** CommentDto đầy đủ
 
-**Errors:** `EPISODE_NOT_FOUND` 404 | `COMMENT_NOT_FOUND` 404 | `NESTED_REPLY_NOT_ALLOWED` 400
+**Errors:**  (tạo và lấy mã lỗi từ ErrorConstains)
 
 ---
 
@@ -167,7 +143,7 @@ ORDER BY c.is_pinned DESC, c.{sort} {order}
 
 **Response `200`:** CommentDto sau sửa
 
-**Errors:** `COMMENT_NOT_FOUND` 404 | `FORBIDDEN` 403
+**Errors:** (tạo và lấy mã lỗi từ ErrorConstains)
 
 ---
 
@@ -182,7 +158,7 @@ ORDER BY c.is_pinned DESC, c.{sort} {order}
 
 **Response `204`:** No content
 
-**Errors:** `COMMENT_NOT_FOUND` 404 | `FORBIDDEN` 403
+**Errors:** (tạo và lấy mã lỗi từ ErrorConstains)
 
 ---
 
@@ -210,7 +186,7 @@ if (alreadyLiked) {
 { "success": true, "data": { "liked": true, "likeCount": 43 } }
 ```
 
-**Errors:** `COMMENT_NOT_FOUND` 404
+**Errors:** (tạo và lấy mã lỗi từ ErrorConstains)
 
 ---
 

@@ -195,8 +195,18 @@ public class AnimeService {
         String cachedJson = redisTemplate.opsForValue().get(cacheKey);
         if (cachedJson != null) {
             try {
-                return objectMapper.readValue(cachedJson,
+                List<AnimeSummaryDto> dtos = objectMapper.readValue(cachedJson,
                         objectMapper.getTypeFactory().constructCollectionType(List.class, AnimeSummaryDto.class));
+                
+                return PageResponse.<AnimeSummaryDto>builder()
+                        .items(dtos)
+                        .pagination(PageResponse.PaginationMeta.builder()
+                                .page(1)
+                                .limit(dtos.size())
+                                .total(dtos.size())
+                                .totalPages(1)
+                                .build())
+                        .build();
             } catch (JsonProcessingException e) {
                 log.warn("Failed to deserialize featured animes");
             }

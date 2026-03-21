@@ -57,7 +57,8 @@ public class OtpService {
         redisTemplate.opsForValue().set(rateLimitKey, "1", Duration.ofSeconds(60));
 
         String title = otpType == OtpType.VERIFY_EMAIL ? "Mã xác thực tài khoản HHKungfu"
-                : "Mã khôi phục mật khẩu HHKungfu";
+                : otpType == OtpType.CHANGE_PASSWORD ? "Mã xác nhận đổi mật khẩu HHKungfu"
+                        : "Mã khôi phục mật khẩu HHKungfu";
         mailService.sendOtpEmail(user, otpCode, title);
     }
 

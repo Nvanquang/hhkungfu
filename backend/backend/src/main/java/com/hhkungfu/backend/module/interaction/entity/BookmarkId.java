@@ -1,0 +1,22 @@
+package com.hhkungfu.backend.module.interaction.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import lombok.*;
+
+import java.io.Serializable;
+import java.util.UUID;
+
+@Embeddable
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode
+public class BookmarkId implements Serializable {
+    @Column(name = "user_id")
+    private UUID userId;
+
+    @Column(name = "anime_id")
+    private Long animeId;
+}

@@ -20,6 +20,13 @@ const AnimeCatalog = lazy(() => import("@/pages/AnimeCatalog"));
 const AnimeDetail = lazy(() => import("@/pages/AnimeDetail"));
 const Search = lazy(() => import("@/pages/Search"));
 
+// User module pages
+const Profile = lazy(() => import("@/pages/Profile"));
+const History = lazy(() => import("@/pages/History"));
+const Bookmarks = lazy(() => import("@/pages/Bookmarks"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const VerifyPasswordChange = lazy(() => import("@/pages/Settings/VerifyPasswordChange"));
+
 // App wrapper to use hooks correctly within the context (though useAuthStore can be anywhere, it's fine inside App)
 function AppContent() {
   useAuthInit();
@@ -35,14 +42,17 @@ function AppContent() {
             <Route path="/anime" element={<AnimeCatalog />} />
             <Route path="/anime/:slug" element={<AnimeDetail />} />
             <Route path="/search" element={<Search />} />
+            
+            {/* Public Profile */}
+            <Route path="/profile/:userId" element={<Profile />} />
 
             {/* Protected Routes Example */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<div className="p-8">Protected Dashboard</div>} />
-              <Route path="/history" element={<div className="p-8">Lịch sử xem</div>} />
-              <Route path="/bookmarks" element={<div className="p-8">Danh sách yêu thích</div>} />
-              <Route path="/profile" element={<div className="p-8">Trang cá nhân</div>} />
-              <Route path="/settings" element={<div className="p-8">Cài đặt</div>} />
+              <Route path="/me/history" element={<History />} />
+              <Route path="/me/bookmarks" element={<Bookmarks />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/verify-password" element={<VerifyPasswordChange />} />
               <Route path="/vip" element={<div className="p-8">VIP</div>} />
             </Route>
           </Route>

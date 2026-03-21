@@ -23,7 +23,7 @@ export default function AnimeDetail() {
 
   if (isError || !anime) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="main-container py-8">
         <EmptyState
           title="Không tìm thấy anime"
           description="Anime không tồn tại hoặc đã bị xóa."
@@ -42,7 +42,7 @@ export default function AnimeDetail() {
         onBack={() => navigate(-1)}
       />
 
-      <div className="container mx-auto px-4 md:px-8 relative z-10 -mt-12 md:-mt-24">
+      <div className="main-container relative z-10 -mt-12 md:-mt-24">
         <Breadcrumb
           className="mb-4 hidden md:flex"
           items={[
@@ -51,6 +51,7 @@ export default function AnimeDetail() {
           ]}
         />
         <AnimeInfoSection
+          animeId={anime.id}
           title={anime.title as string}
           titleOther={titleOther}
           thumbnailUrl={anime.thumbnailUrl}
@@ -63,6 +64,7 @@ export default function AnimeDetail() {
           year={anime.year}
           studios={anime.studios}
           genres={anime.genres}
+          isBookmarked={anime.isBookmarked}
         />
 
         <hr className="my-8 border-border/40 hidden md:block" />

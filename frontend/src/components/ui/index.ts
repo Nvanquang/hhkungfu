@@ -94,3 +94,4 @@ export {
   TableCell,
   TableCaption,
 } from "./table";
+export { Progress } from "./progress";

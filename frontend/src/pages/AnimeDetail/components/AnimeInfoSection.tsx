@@ -1,11 +1,14 @@
 // Khu vực thông tin chính gồm poster, title, score, metadata, genre tags, action buttons và star rating — layout khác nhau giữa mobile và desktop.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bookmark, Crown, Play, Star } from "lucide-react";
 import { Badge, Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import type { Genre, Studio } from "@/types";
+import { userService } from "@/services/userService";
+import { toast } from "sonner";
 
 interface Props {
+  animeId: number;
   title: string;
   titleOther: string | null;
   thumbnailUrl?: string | null;
@@ -18,25 +21,67 @@ interface Props {
   year?: number | null;
   studios?: Studio[];
   genres?: Genre[] | null;
+  isBookmarked?: boolean;
 }
 
 export function AnimeInfoSection({
-  title, titleOther, thumbnailUrl, hasVipContent,
+  animeId, title, titleOther, thumbnailUrl, hasVipContent,
   malScore, viewCount, status, type, totalEpisodes, year, studios, genres,
+  isBookmarked: initialIsBookmarked,
 }: Props) {
+  const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked);
   const [hoverRating, setHoverRating] = useState(0);
+  const [userRating, setUserRating] = useState(0);
+
+  useEffect(() => {
+    const fetchUserRating = async () => {
+      try {
+        const score = await userService.getMyRating(animeId);
+        setUserRating(score);
+      } catch (error) {
+        console.error("Failed to fetch user rating:", error);
+      }
+    };
+    fetchUserRating();
+  }, [animeId]);
+
+  const handleRate = async (score: number) => {
+    try {
+      await userService.rateAnime(animeId, score);
+      setUserRating(score);
+      toast.success("Đánh giá thành công");
+    } catch (error) {
+      // toast is already handled by apiClient interceptor if configured
+    }
+  };
 
   const statusBadgeClass = cn(
     "font-bold",
-    status === "ONGOING"   && "bg-green-500/15 text-green-600 dark:text-green-400",
+    status === "ONGOING" && "bg-green-500/15 text-green-600 dark:text-green-400",
     status === "COMPLETED" && "bg-muted text-muted-foreground",
-    status === "UPCOMING"  && "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+    status === "UPCOMING" && "bg-amber-500/15 text-amber-600 dark:text-amber-400"
   );
   const statusLabel =
-    status === "ONGOING"   ? "● ĐANG CHIẾU" :
-    status === "COMPLETED" ? "✓ HOÀN THÀNH" : "◷ SẮP RA MẮT";
+    status === "ONGOING" ? "● ĐANG CHIẾU" :
+      status === "COMPLETED" ? "✓ HOÀN THÀNH" : "◷ SẮP RA MẮT";
 
   const scorePercent = Math.min(100, Math.max(0, ((malScore ?? 0) / 10) * 100));
+
+  const handleToggleBookmark = async () => {
+    try {
+      if (isBookmarked) {
+        await userService.removeBookmark(animeId);
+        toast.success("Đã xóa khỏi danh sách bookmarks");
+        setIsBookmarked(false);
+      } else {
+        await userService.addBookmark(animeId);
+        toast.success("Đã thêm vào danh sách bookmarks");
+        setIsBookmarked(true);
+      }
+    } catch (error) {
+      toast.error("Có lỗi xảy ra, vui lòng thử lại sau");
+    }
+  };
 
   return (
     <section className="flex flex-col md:flex-row gap-4 md:gap-8">
@@ -135,22 +180,31 @@ export function AnimeInfoSection({
           <Button size="lg" className="gap-2 w-full sm:w-auto font-bold shadow-md shadow-primary/20 hover:scale-[1.02] transition-transform">
             <Play className="h-4 w-4 fill-current" /> ▶ Xem Tập 1
           </Button>
-          <Button size="lg" variant="outline" className="gap-2 w-full sm:w-auto font-medium shadow-sm hover:bg-muted/50">
-            <Bookmark className="h-4 w-4" /> + Thêm bookmark
+          <Button
+            size="lg"
+            variant="outline"
+            className={cn(
+              "gap-2 w-full sm:w-auto font-medium shadow-sm transition-colors",
+              isBookmarked ? "bg-red-500/10 border-red-500/50 text-red-500 hover:bg-red-500/20" : "hover:bg-muted/50"
+            )}
+            onClick={handleToggleBookmark}
+          >
+            <Bookmark className={cn("h-4 w-4", isBookmarked && "fill-current text-red-500")} />
+            {isBookmarked ? "Đã Bookmark" : "Bookmark"}
           </Button>
         </div>
 
-        {/* Star rating */}
         <div className="pt-2 flex items-center justify-center md:justify-start gap-3 text-sm">
           <span className="font-medium text-foreground hidden md:inline">★ Đánh giá của bạn:</span>
           <div className="flex gap-[2px] cursor-pointer" onMouseLeave={() => setHoverRating(0)}>
-            {[1,2,3,4,5,6,7,8,9,10].map((i) => (
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
               <Star
                 key={i}
                 onMouseEnter={() => setHoverRating(i)}
+                onClick={() => handleRate(i)}
                 className={cn(
                   "h-[22px] w-[22px] transition-all duration-150",
-                  hoverRating >= i ? "fill-yellow-500 text-yellow-500 scale-[1.15]" : "text-muted-foreground/30 hover:text-yellow-500"
+                  (hoverRating || userRating) >= i ? "fill-yellow-500 text-yellow-500 scale-[1.15]" : "text-muted-foreground/30 hover:text-yellow-500"
                 )}
               />
             ))}

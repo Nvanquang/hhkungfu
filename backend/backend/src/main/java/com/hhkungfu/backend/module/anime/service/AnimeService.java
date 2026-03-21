@@ -15,6 +15,8 @@ import com.hhkungfu.backend.module.anime.mapper.AnimeMapper;
 import com.hhkungfu.backend.module.anime.repository.AnimeRepository;
 import com.hhkungfu.backend.module.anime.repository.GenreRepository;
 import com.hhkungfu.backend.module.anime.repository.StudioRepository;
+import com.hhkungfu.backend.module.interaction.service.BookmarkService;
+import com.hhkungfu.backend.common.util.SecurityUtil;
 
 import jakarta.persistence.criteria.Join;
 
@@ -44,6 +46,7 @@ public class AnimeService {
     private final AnimeRepository animeRepository;
     private final GenreRepository genreRepository;
     private final StudioRepository studioRepository;
+    private final BookmarkService bookmarkService;
     private final AnimeMapper animeMapper;
 
     private final StringRedisTemplate redisTemplate;
@@ -66,6 +69,8 @@ public class AnimeService {
                 .stream()
                 .map(animeMapper::toSummaryDto)
                 .toList();
+
+        populateBookmarkStatus(items);
 
         return PageResponse.<AnimeSummaryDto>builder()
                 .items(items)
@@ -174,6 +179,7 @@ public class AnimeService {
                                 () -> new ResourceNotFoundException("Anime not found", "ANIME", "ANIME_NOT_FOUND"));
 
         AnimeDetailDto dto = animeMapper.toDetailDto(anime);
+        populateBookmarkStatus(dto);
 
         // 3. Save to Cache
         try {
@@ -197,7 +203,9 @@ public class AnimeService {
             try {
                 List<AnimeSummaryDto> dtos = objectMapper.readValue(cachedJson,
                         objectMapper.getTypeFactory().constructCollectionType(List.class, AnimeSummaryDto.class));
-                
+
+                populateBookmarkStatus(dtos);
+
                 return PageResponse.<AnimeSummaryDto>builder()
                         .items(dtos)
                         .pagination(PageResponse.PaginationMeta.builder()
@@ -214,6 +222,8 @@ public class AnimeService {
 
         List<Anime> animes = animeRepository.findFeaturedAnimes(limit);
         List<AnimeSummaryDto> dtos = animes.stream().map(animeMapper::toSummaryDto).toList();
+
+        populateBookmarkStatus(dtos);
 
         try {
             redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(dtos), Duration.ofMinutes(10));
@@ -238,6 +248,7 @@ public class AnimeService {
     public PageResponse<AnimeSummaryDto> getRecentlyUpdated(Pageable pageable) {
         Page<Anime> page = animeRepository.findRecentlyUpdated(pageable);
         List<AnimeSummaryDto> dtos = page.getContent().stream().map(animeMapper::toSummaryDto).toList();
+        populateBookmarkStatus(dtos);
         return PageResponse.<AnimeSummaryDto>builder()
                 .items(dtos)
                 .pagination(PageResponse.PaginationMeta.builder()
@@ -253,6 +264,7 @@ public class AnimeService {
     public PageResponse<AnimeSummaryDto> getRelated(Long id, Pageable pageable) {
         Page<Anime> page = animeRepository.findRelatedAnimes(id, pageable);
         List<AnimeSummaryDto> dtos = page.getContent().stream().map(animeMapper::toSummaryDto).toList();
+        populateBookmarkStatus(dtos);
         return PageResponse.<AnimeSummaryDto>builder()
                 .items(dtos)
                 .pagination(PageResponse.PaginationMeta.builder()
@@ -337,5 +349,25 @@ public class AnimeService {
         redisTemplate.delete("anime:" + id);
         redisTemplate.delete("anime:slug:" + anime.getSlug());
         redisTemplate.delete("anime:featured");
+    }
+
+    private void populateBookmarkStatus(List<AnimeSummaryDto> dtos) {
+        if (dtos == null || dtos.isEmpty())
+            return;
+
+        SecurityUtil.getCurrentUserId().ifPresent(userId -> {
+            java.util.Set<Long> bookmarkedIds = bookmarkService.getBookmarkedAnimeIds(userId);
+            dtos.forEach(dto -> dto.setIsBookmarked(bookmarkedIds.contains(dto.getId())));
+        });
+    }
+
+    private void populateBookmarkStatus(AnimeDetailDto dto) {
+        if (dto == null)
+            return;
+
+        SecurityUtil.getCurrentUserId().ifPresent(userId -> {
+            java.util.Set<Long> bookmarkedIds = bookmarkService.getBookmarkedAnimeIds(userId);
+            dto.setIsBookmarked(bookmarkedIds.contains(dto.getId()));
+        });
     }
 }

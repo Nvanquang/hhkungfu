@@ -39,7 +39,7 @@ export default function Home() {
         isLoading={isFeaturedLoading}
         isError={isFeaturedError}
       />
-      <div className="container mx-auto px-4 md:px-6 py-6 md:py-8 space-y-10">
+      <div className="main-container py-6 md:py-8 space-y-10">
 
         <TrendingSection items={trending as AnimeSummary[]} isLoading={isTrendingLoading} />
 

@@ -52,46 +52,7 @@ CREATE INDEX idx_ratings_anime ON ratings (anime_id);
 
 ---
 
-## 2. Package Structure
-
-```
-com.hhkungfu.user/
-├── controller/
-│   ├── UserProfileController.java    -- GET /users/:id/profile, PATCH /users/me/*
-│   ├── WatchHistoryController.java   -- /users/me/watch-history
-│   ├── BookmarkController.java       -- /users/me/bookmarks
-│   └── RatingController.java         -- /ratings/anime/:animeId
-├── service/
-│   ├── UserService.java
-│   ├── WatchHistoryService.java
-│   ├── BookmarkService.java
-│   └── RatingService.java
-├── dto/
-│   ├── request/
-│   │   ├── UpdateProfileRequest.java
-│   │   ├── ChangePasswordRequest.java
-│   │   ├── UpsertWatchHistoryRequest.java
-│   │   └── RatingRequest.java
-│   └── response/
-│       ├── UserProfileDto.java
-│       ├── WatchHistoryItemDto.java
-│       ├── BookmarkItemDto.java
-│       └── RatingSummaryDto.java
-├── entity/
-│   ├── User.java        -- shared với module auth
-│   ├── WatchHistory.java
-│   ├── Bookmark.java
-│   └── Rating.java
-└── repository/
-    ├── UserRepository.java
-    ├── WatchHistoryRepository.java
-    ├── BookmarkRepository.java
-    └── RatingRepository.java
-```
-
----
-
-## 3. API Endpoints
+## 2. API Endpoints
 
 ### GET `/api/v1/users/:id/profile`
 **Auth:** Không cần

@@ -5,6 +5,7 @@ import com.hhkungfu.backend.module.anime.enums.AnimeType;
 import com.hhkungfu.backend.module.anime.enums.Season;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
+@Setter
 @Builder
 public class AnimeDetailDto {
     private Long id;
@@ -39,6 +41,7 @@ public class AnimeDetailDto {
     private List<StudioDto> studios;
     private BigDecimal averageRating;
     private Integer totalRatings;
+    private Boolean isBookmarked;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

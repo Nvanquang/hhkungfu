@@ -1,9 +1,11 @@
 // Hero banner nổi bật phía đầu trang, hiển thị ảnh nền, thông tin anime, nút CTA và dot indicator để chuyển slide.
 import { useNavigate } from "react-router-dom";
-import { Flame, Play, Plus } from "lucide-react";
+import { Bookmark, Flame, Play } from "lucide-react";
 import { Badge, Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import type { AnimeSummary } from "@/types";
+import { userService } from "@/services/userService";
+import { toast } from "sonner";
 
 interface Props {
   featured: AnimeSummary[];
@@ -42,8 +44,26 @@ export function HeroSection({ featured, activeIndex, setActiveIndex, isLoading, 
   const heroGenres = heroAnime.genres?.slice(0, 4) ?? [];
 
   // mobile: thumbnailUrl (portrait 2:3), desktop: bannerUrl (landscape 16:9)
-  const mobileSrc  = heroAnime.thumbnailUrl ?? heroAnime.bannerUrl ?? "";
-  const desktopSrc = heroAnime.bannerUrl    ?? heroAnime.thumbnailUrl ?? "";
+  const mobileSrc = heroAnime.thumbnailUrl ?? heroAnime.bannerUrl ?? "";
+  const desktopSrc = heroAnime.bannerUrl ?? heroAnime.thumbnailUrl ?? "";
+
+  const handleToggleBookmark = async () => {
+    if (!heroAnime) return;
+
+    try {
+      if (heroAnime.isBookmarked) {
+        await userService.removeBookmark(heroAnime.id);
+        toast.success("Đã xóa khỏi danh sách bookmarks");
+        heroAnime.isBookmarked = false; // Optimistic update
+      } else {
+        await userService.addBookmark(heroAnime.id);
+        toast.success("Đã thêm vào danh sách bookmarks");
+        heroAnime.isBookmarked = true; // Optimistic update
+      }
+    } catch (error) {
+      toast.error("Có lỗi xảy ra, vui lòng thử lại sau");
+    }
+  };
 
   return (
     <section className={SECTION_CLASS}>
@@ -114,9 +134,17 @@ export function HeroSection({ featured, activeIndex, setActiveIndex, isLoading, 
               <Play className="h-4 w-4 fill-current" />
               Xem ngay
             </Button>
-            <Button variant="outline" className="gap-2 border-white/30 text-white hover:bg-white/10" type="button">
-              <Plus className="h-4 w-4" />
-              Bookmark
+            <Button
+              variant="outline"
+              className={cn(
+                "gap-2 border-white/30 text-white hover:bg-white/10 transition-colors",
+                heroAnime.isBookmarked && "bg-red-500/20 border-red-500 text-red-500 hover:bg-red-500/30"
+              )}
+              type="button"
+              onClick={handleToggleBookmark}
+            >
+              <Bookmark className={cn("h-4 w-4", heroAnime.isBookmarked && "fill-current text-red-500")} />
+              {heroAnime.isBookmarked ? "Đã Bookmark" : "Bookmark"}
             </Button>
           </div>
 

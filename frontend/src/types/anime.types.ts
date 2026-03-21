@@ -31,6 +31,7 @@ export interface AnimeSummary {
   viewCount: number;
   hasVipContent: boolean;
   genres: Genre[];
+  isBookmarked?: boolean;
   // Present in `/animes/recently-updated`
   latestEp?: number;
   latestEpAdded?: string;

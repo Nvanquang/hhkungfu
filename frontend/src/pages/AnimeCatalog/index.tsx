@@ -27,7 +27,7 @@ export default function AnimeCatalog() {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 md:px-6 py-6 md:py-8 space-y-6">
+    <div className="main-container py-6 md:py-8 space-y-6">
       <Breadcrumb items={[{ label: "Khám phá Anime" }]} />
 
       <div className="space-y-1">

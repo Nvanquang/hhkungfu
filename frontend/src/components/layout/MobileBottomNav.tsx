@@ -1,15 +1,18 @@
 import { NavLink } from "react-router-dom";
 import { Home, Search, Library, User } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const items = [
-  { to: "/", label: "Home", icon: Home },
-  { to: "/search", label: "Search", icon: Search },
-  { to: "/bookmarks", label: "Library", icon: Library },
-  { to: "/profile", label: "Profile", icon: User },
-] as const;
+import { useAuthStore } from "@/store/authStore";
 
 export function MobileBottomNav() {
+  const { user } = useAuthStore();
+
+  const items = [
+    { to: "/", label: "Home", icon: Home },
+    { to: "/search", label: "Search", icon: Search },
+    { to: "/me/bookmarks", label: "Library", icon: Library },
+    { to: user ? "/settings" : "/login", label: "Profile", icon: User },
+  ] as const;
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/50 bg-background/90 backdrop-blur md:hidden">
       <div className="mx-auto grid max-w-md grid-cols-4 px-2 py-1">

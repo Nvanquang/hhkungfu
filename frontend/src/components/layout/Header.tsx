@@ -323,13 +323,13 @@ export function Header() {
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Tài khoản</p>
                     <p className="font-bold text-foreground mt-1 truncate">{user.username}</p>
                   </div>
-                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/profile')}>
+                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate(`/profile/${user.id}`)}>
                     <User className="mr-3 w-4 h-4 text-primary" /> Trang cá nhân
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/bookmarks')}>
-                    <Bookmark className="mr-3 w-4 h-4 text-primary" /> Danh sách yêu thích
+                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/me/bookmarks')}>
+                    <Bookmark className="mr-3 w-4 h-4 text-primary" /> Danh sách bookmarks
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/history')}>
+                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/me/history')}>
                     <Clock className="mr-3 w-4 h-4 text-primary" /> Lịch sử xem
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/settings')}>
@@ -370,7 +370,7 @@ export function Header() {
               variant="ghost"
               size="icon"
               className="rounded-xl hover:bg-muted/50 transition-colors"
-              onClick={() => navigate(user ? "/profile" : "/login")}
+              onClick={() => navigate(user ? `/profile/${user.id}` : "/login")}
               aria-label="User"
             >
               <User className="w-5 h-5" />

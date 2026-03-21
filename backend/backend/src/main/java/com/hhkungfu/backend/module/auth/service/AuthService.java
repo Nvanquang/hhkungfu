@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hhkungfu.backend.common.exception.AuthException;
+import com.hhkungfu.backend.common.exception.ConflictException;
 import com.hhkungfu.backend.common.exception.ErrorConstants;
 import com.hhkungfu.backend.common.util.SecurityUtil;
 import com.hhkungfu.backend.common.constant.RedisKeys;
@@ -55,12 +56,7 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest req) {
         if (userRepository.existsByEmail(req.email())) {
-            throw new AuthException("Email đã được dùng", HttpStatus.CONFLICT,
-                    ErrorConstants.EMAIL_ALREADY_EXISTS.getCode());
-        }
-        if (userRepository.existsByUsername(req.username())) {
-            throw new AuthException("Username đã được dùng", HttpStatus.CONFLICT,
-                    ErrorConstants.USERNAME_ALREADY_EXISTS.getCode());
+            throw new ConflictException("Email đã được dùng", ErrorConstants.EMAIL_ALREADY_EXISTS.getCode());
         }
 
         User user = User.builder()
@@ -88,8 +84,7 @@ public class AuthService {
                                 ErrorConstants.USER_NOT_FOUND.getCode()));
 
         if (user.isEmailVerified()) {
-            throw new AuthException("Email đã được xác thực", HttpStatus.CONFLICT,
-                    ErrorConstants.EMAIL_ALREADY_VERIFIED.getCode());
+            throw new ConflictException("Email đã được xác thực", ErrorConstants.EMAIL_ALREADY_VERIFIED.getCode());
         }
 
         boolean isValid = otpService.verifyOtp(user, OtpType.VERIFY_EMAIL, req.otpCode());

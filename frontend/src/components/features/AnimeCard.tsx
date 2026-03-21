@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { PlayCircle, Star } from "lucide-react";
+import { PlayCircle, Star, X } from "lucide-react";
 import type { AnimeSummary } from "@/types/anime.types";
 import { cn } from "@/lib/utils";
 
@@ -7,9 +7,10 @@ interface AnimeCardProps {
   anime: AnimeSummary;
   className?: string;
   showDetails?: boolean;
+  onRemove?: (id: number) => void;
 }
 
-export function AnimeCard({ anime, className, showDetails = true }: AnimeCardProps) {
+export function AnimeCard({ anime, className, showDetails = true, onRemove }: AnimeCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "ONGOING":
@@ -47,7 +48,7 @@ export function AnimeCard({ anime, className, showDetails = true }: AnimeCardPro
 
         {/* Gradient Overlay for Text Readability or Hover */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
-        
+
         {/* Hover Play Overlay */}
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <PlayCircle className="w-12 h-12 text-white/90 drop-shadow-lg" />
@@ -60,6 +61,21 @@ export function AnimeCard({ anime, className, showDetails = true }: AnimeCardPro
               ✨ VIP
             </span>
           </div>
+        )}
+
+        {/* Remove Bookmark Button (Only on Hover) */}
+        {onRemove && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRemove(anime.id);
+            }}
+            className="absolute top-2 right-2 z-20 p-1.5 bg-black/60 hover:bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 backdrop-blur-sm"
+            title="Xóa khỏi bookmarks"
+          >
+            <X className="w-4 h-4" />
+          </button>
         )}
       </Link>
 
@@ -97,7 +113,7 @@ export function AnimeCard({ anime, className, showDetails = true }: AnimeCardPro
             <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
             <span className="font-medium text-foreground">{anime.malScore?.toFixed(2) || "N/A"}</span>
           </div>
-          
+
           {anime.genres && anime.genres.length > 0 && (
             <div className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
               {anime.genres.map((g) => g.name).join(" · ")}

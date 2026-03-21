@@ -1,5 +1,6 @@
 package com.hhkungfu.backend.module.anime.service;
 
+import com.hhkungfu.backend.common.exception.ErrorConstants;
 import com.hhkungfu.backend.common.exception.ResourceNotFoundException;
 import com.hhkungfu.backend.module.anime.dto.StudioDto;
 import com.hhkungfu.backend.module.anime.entity.Studio;
@@ -28,7 +29,7 @@ public class StudioService {
     public StudioDto getStudioById(Long id) {
         Studio studio = studioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Studio not found with id: " + id, "STUDIO",
-                        "STUDIO_NOT_FOUND"));
+                        ErrorConstants.STUDIO_NOT_FOUND.getCode()));
         return studioMapper.toDto(studio);
     }
 }

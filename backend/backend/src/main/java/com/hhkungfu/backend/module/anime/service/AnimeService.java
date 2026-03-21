@@ -1,6 +1,7 @@
 package com.hhkungfu.backend.module.anime.service;
 
-import com.hhkungfu.backend.common.exception.BusinessException;
+import com.hhkungfu.backend.common.exception.ConflictException;
+import com.hhkungfu.backend.common.exception.ErrorConstants;
 import com.hhkungfu.backend.common.exception.ResourceNotFoundException;
 import com.hhkungfu.backend.common.response.PageResponse;
 import com.hhkungfu.backend.module.anime.dto.AnimeDetailDto;
@@ -173,10 +174,10 @@ public class AnimeService {
 
         // 2. Query DB
         Anime anime = (idOrSlug.matches("\\d+")) ? animeRepository.findByIdAndDeletedAtIsNull(Long.parseLong(idOrSlug))
-                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME", "ANIME_NOT_FOUND"))
+                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME", ErrorConstants.ANIME_NOT_FOUND.getCode()))
                 : animeRepository.findBySlugAndDeletedAtIsNull(idOrSlug)
                         .orElseThrow(
-                                () -> new ResourceNotFoundException("Anime not found", "ANIME", "ANIME_NOT_FOUND"));
+                                () -> new ResourceNotFoundException("Anime not found", "ANIME", ErrorConstants.ANIME_NOT_FOUND.getCode()));
 
         AnimeDetailDto dto = animeMapper.toDetailDto(anime);
         populateBookmarkStatus(dto);
@@ -279,7 +280,7 @@ public class AnimeService {
     @Transactional
     public AnimeDetailDto createAnime(CreateAnimeRequest request) {
         if (animeRepository.existsBySlug(request.slug())) {
-            throw new BusinessException("Slug already exists", "ANIME", "SLUG_ALREADY_EXISTS");
+            throw new ConflictException("Slug already exists", ErrorConstants.SLUG_ALREADY_EXISTS.getCode());
         }
 
         Anime anime = animeMapper.toEntity(request);
@@ -306,11 +307,11 @@ public class AnimeService {
     @Transactional
     public AnimeDetailDto updateAnime(Long id, UpdateAnimeRequest request) {
         Anime anime = animeRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME", "ANIME_NOT_FOUND"));
+                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME", ErrorConstants.ANIME_NOT_FOUND.getCode()));
 
         if (request.slug() != null && !request.slug().equals(anime.getSlug())) {
             if (animeRepository.existsBySlug(request.slug())) {
-                throw new BusinessException("Slug already exists", "ANIME", "SLUG_ALREADY_EXISTS");
+                throw new ConflictException("Slug already exists", ErrorConstants.SLUG_ALREADY_EXISTS.getCode());
             }
             anime.setSlug(request.slug());
         }
@@ -341,7 +342,7 @@ public class AnimeService {
     @Transactional
     public void deleteAnime(Long id) {
         Anime anime = animeRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME", "ANIME_NOT_FOUND"));
+                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME", ErrorConstants.ANIME_NOT_FOUND.getCode()));
 
         anime.setDeletedAt(LocalDateTime.now());
         animeRepository.save(anime);

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hhkungfu.backend.common.exception.AuthException;
+import com.hhkungfu.backend.common.exception.BadRequestAlertException;
 import com.hhkungfu.backend.common.exception.ConflictException;
 import com.hhkungfu.backend.common.exception.ErrorConstants;
 import com.hhkungfu.backend.common.util.SecurityUtil;
@@ -89,7 +90,7 @@ public class AuthService {
 
         boolean isValid = otpService.verifyOtp(user, OtpType.VERIFY_EMAIL, req.otpCode());
         if (!isValid) {
-            throw new AuthException("OTP sai hoặc đã hết hạn", HttpStatus.BAD_REQUEST,
+            throw new BadRequestAlertException("OTP sai hoặc đã hết hạn", HttpStatus.BAD_REQUEST,
                     ErrorConstants.OTP_INVALID.getCode());
         }
 
@@ -119,7 +120,7 @@ public class AuthService {
                         ErrorConstants.INVALID_CREDENTIALS.getCode()));
 
         if (ProviderType.GOOGLE.equals(user.getProvider())) {
-            throw new AuthException("Tài khoản này đăng ký qua Google, không có password", HttpStatus.BAD_REQUEST,
+            throw new BadRequestAlertException("Tài khoản này đăng ký qua Google, không có password", HttpStatus.BAD_REQUEST,
                     ErrorConstants.OAUTH_ACCOUNT.getCode());
         }
 
@@ -135,7 +136,7 @@ public class AuthService {
 
         if (!user.isEmailVerified()) {
             throw new AuthException("Email chưa được xác thực", HttpStatus.FORBIDDEN,
-                    ErrorConstants.EMAIL_ALREADY_VERIFIED.getCode());
+                    ErrorConstants.EMAIL_NOT_VERIFIED.getCode());
         }
 
         // xác thực người dùng => cần viết hàm loadUserByUsername
@@ -160,7 +161,7 @@ public class AuthService {
 
         String redisHash = redisTemplate.opsForValue().get(RedisKeys.refresh(userIdStr));
         if (redisHash == null || !redisHash.equals(refreshToken)) {
-            throw new AuthException("Refresh token không hợp lệ hoặc đã bị revoke", HttpStatus.UNAUTHORIZED,
+            throw new BadRequestAlertException("Refresh token không hợp lệ hoặc đã bị revoke", HttpStatus.UNAUTHORIZED,
                     ErrorConstants.REFRESH_TOKEN_INVALID.getCode());
         }
 
@@ -224,7 +225,7 @@ public class AuthService {
 
         boolean isValid = otpService.verifyOtp(user, OtpType.FORGOT_PASSWORD, req.otpCode());
         if (!isValid) {
-            throw new AuthException("OTP sai hoặc đã hết hạn", HttpStatus.BAD_REQUEST,
+            throw new BadRequestAlertException("OTP sai hoặc đã hết hạn", HttpStatus.BAD_REQUEST,
                     ErrorConstants.OTP_INVALID.getCode());
         }
 

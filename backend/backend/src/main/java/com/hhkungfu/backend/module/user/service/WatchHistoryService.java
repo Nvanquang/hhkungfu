@@ -31,7 +31,7 @@ public class WatchHistoryService {
         UUID userId = UUID.fromString(userIdStr);
         if (!episodeRepository.existsById(request.episodeId())) {
             throw new ResourceNotFoundException("Episode không tồn tại", "EPISODE",
-                    ErrorConstants.ANIME_NOT_FOUND.getCode());
+                    ErrorConstants.EPISODE_NOT_FOUND.getCode());
         }
 
         WatchHistoryId id = new WatchHistoryId(userId, request.episodeId());

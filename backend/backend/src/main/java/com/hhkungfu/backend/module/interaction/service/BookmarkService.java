@@ -6,7 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.hhkungfu.backend.common.exception.BusinessException;
+import com.hhkungfu.backend.common.exception.ConflictException;
 import com.hhkungfu.backend.common.exception.ErrorConstants;
 import com.hhkungfu.backend.common.exception.ResourceNotFoundException;
 import com.hhkungfu.backend.common.response.PageResponse;
@@ -45,7 +45,7 @@ public class BookmarkService {
 
         BookmarkId id = new BookmarkId(userId, animeId);
         if (bookmarkRepository.existsById(id)) {
-            throw new BusinessException("Anime đã được bookmark", "BOOKMARK",
+            throw new ConflictException("Anime đã được bookmark",
                     ErrorConstants.ALREADY_BOOKMARKED.getCode());
         }
 
@@ -66,7 +66,7 @@ public class BookmarkService {
 
         if (!bookmarkRepository.existsById(id)) {
             throw new ResourceNotFoundException("Bookmark không tồn tại", "BOOKMARK",
-                    ErrorConstants.USER_NOT_FOUND.getCode()); // Or BOOKMARK_NOT_FOUND if defined
+                    ErrorConstants.BOOKMARK_NOT_FOUND.getCode());
         }
 
         bookmarkRepository.deleteById(id);

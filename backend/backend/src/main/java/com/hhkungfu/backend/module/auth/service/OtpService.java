@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.hhkungfu.backend.common.exception.AuthException;
+import com.hhkungfu.backend.common.exception.BadRequestAlertException;
 import com.hhkungfu.backend.common.exception.ErrorConstants;
 import com.hhkungfu.backend.module.auth.entity.UserOtp;
 import com.hhkungfu.backend.module.auth.enums.OtpType;
@@ -31,7 +31,7 @@ public class OtpService {
     public void generateAndSendOtp(User user, OtpType otpType) {
         String rateLimitKey = RedisKeys.rateLimitOtp(user.getEmail());
         if (Boolean.TRUE.equals(redisTemplate.hasKey(rateLimitKey))) {
-            throw new AuthException("Thao tác quá nhanh, vui lòng thử lại sau.", HttpStatus.TOO_MANY_REQUESTS,
+            throw new BadRequestAlertException("Thao tác quá nhanh, vui lòng thử lại sau.", HttpStatus.TOO_MANY_REQUESTS,
                     ErrorConstants.OTP_RATE_LIMIT.getCode());
         }
 
@@ -69,7 +69,7 @@ public class OtpService {
         redisTemplate.expire(attemptKey, Duration.ofMinutes(10));
 
         if (attempts != null && attempts > 5) {
-            throw new AuthException("Bạn đã nhập sai OTP quá nhiều lần.", HttpStatus.TOO_MANY_REQUESTS,
+            throw new BadRequestAlertException("Bạn đã nhập sai OTP quá nhiều lần.", HttpStatus.TOO_MANY_REQUESTS,
                     ErrorConstants.OTP_RATE_LIMIT.getCode());
         }
 

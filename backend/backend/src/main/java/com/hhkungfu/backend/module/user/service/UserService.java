@@ -5,9 +5,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.hhkungfu.backend.common.exception.BusinessException;
+import com.hhkungfu.backend.common.exception.BadRequestAlertException;
 import com.hhkungfu.backend.common.exception.ErrorConstants;
 import com.hhkungfu.backend.common.exception.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
 import com.hhkungfu.backend.module.auth.enums.OtpType;
 import com.hhkungfu.backend.module.auth.service.OtpService;
 import com.hhkungfu.backend.module.interaction.repository.BookmarkRepository;
@@ -74,17 +75,17 @@ public class UserService {
                         ErrorConstants.USER_NOT_FOUND.getCode()));
 
         if (ProviderType.GOOGLE.equals(user.getProvider())) {
-            throw new BusinessException("Tài khoản đăng ký qua Google không thể đổi mật khẩu", "USER",
+            throw new BadRequestAlertException("Tài khoản đăng ký qua Google không thể đổi mật khẩu", HttpStatus.BAD_REQUEST,
                     ErrorConstants.OAUTH_ACCOUNT.getCode());
         }
 
         if (!passwordEncoder.matches(request.oldPassword(), user.getPassword())) {
-            throw new BusinessException("Mật khẩu cũ không chính xác", "USER",
+            throw new BadRequestAlertException("Mật khẩu cũ không chính xác", HttpStatus.BAD_REQUEST,
                     ErrorConstants.INVALID_PASSWORD.getCode());
         }
 
         if (request.oldPassword().equals(request.newPassword())) {
-            throw new BusinessException("Mật khẩu mới không được trùng mật khẩu cũ", "USER",
+            throw new BadRequestAlertException("Mật khẩu mới không được trùng mật khẩu cũ", HttpStatus.BAD_REQUEST,
                     ErrorConstants.SAME_PASSWORD.getCode());
         }
 
@@ -107,7 +108,7 @@ public class UserService {
         // Verify OTP
         boolean isValid = otpService.verifyOtp(user, OtpType.CHANGE_PASSWORD, request.otpCode());
         if (!isValid) {
-            throw new BusinessException("Mã OTP không chính xác hoặc đã hết hạn", "USER",
+            throw new BadRequestAlertException("Mã OTP không chính xác hoặc đã hết hạn", HttpStatus.BAD_REQUEST,
                     ErrorConstants.OTP_INVALID.getCode());
         }
 
@@ -116,7 +117,7 @@ public class UserService {
         String encodedPassword = redisTemplate.opsForValue().get(pendingKey);
 
         if (encodedPassword == null) {
-            throw new BusinessException("Yêu cầu đã hết hạn, vui lòng thực hiện lại từ đầu", "USER",
+            throw new BadRequestAlertException("Yêu cầu đã hết hạn, vui lòng thực hiện lại từ đầu", HttpStatus.BAD_REQUEST,
                     ErrorConstants.OTP_EXPIRED.getCode());
         }
 

@@ -1,7 +1,10 @@
 package com.hhkungfu.backend.module.interaction.service;
 
-import com.hhkungfu.backend.common.exception.BusinessException;
+import com.hhkungfu.backend.common.exception.BadRequestAlertException;
+import com.hhkungfu.backend.common.exception.ErrorConstants;
+import com.hhkungfu.backend.common.exception.ForbiddenException;
 import com.hhkungfu.backend.common.exception.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
 import com.hhkungfu.backend.common.response.PageResponse;
 import com.hhkungfu.backend.module.interaction.dto.*;
 import com.hhkungfu.backend.module.interaction.entity.Comment;
@@ -89,7 +92,7 @@ public class CommentService {
     @Transactional
     public CommentDto createComment(Long episodeId, UUID userId, CreateCommentRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found", "USER", "USER_NOT_FOUND"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found", "USER", ErrorConstants.USER_NOT_FOUND.getCode()));
 
         Comment comment = Comment.builder()
                 .content(request.getContent())
@@ -100,14 +103,14 @@ public class CommentService {
         if (request.getParentId() != null) {
             Comment parent = commentRepository.findByIdAndDeletedAtIsNull(request.getParentId())
                     .orElseThrow(() -> new ResourceNotFoundException("Parent comment not found", "COMMENT",
-                            "COMMENT_NOT_FOUND"));
+                            ErrorConstants.COMMENT_NOT_FOUND.getCode()));
 
             if (parent.getParent() != null) {
-                throw new BusinessException("Nested reply not allowed", "COMMENT", "NESTED_REPLY_NOT_ALLOWED");
+                throw new BadRequestAlertException("Nested reply not allowed", HttpStatus.BAD_REQUEST, ErrorConstants.NESTED_REPLY_NOT_ALLOWED.getCode());
             }
 
             if (!parent.getEpisodeId().equals(episodeId)) {
-                throw new BusinessException("Parent comment belongs to another episode", "COMMENT", "VALIDATION_ERROR");
+                throw new BadRequestAlertException("Parent comment belongs to another episode", HttpStatus.BAD_REQUEST, ErrorConstants.VALIDATION_ERROR.getCode());
             }
 
             comment.setParent(parent);
@@ -120,10 +123,10 @@ public class CommentService {
     @Transactional
     public CommentDto updateComment(Long id, UUID userId, UpdateCommentRequest request) {
         Comment comment = commentRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Comment not found", "COMMENT", "COMMENT_NOT_FOUND"));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found", "COMMENT", ErrorConstants.COMMENT_NOT_FOUND.getCode()));
 
         if (!comment.getUser().getId().equals(userId)) {
-            throw new BusinessException("Access denied", "COMMENT", "FORBIDDEN");
+            throw new ForbiddenException("Access denied", HttpStatus.FORBIDDEN, ErrorConstants.FORBIDDEN.getCode());
         }
 
         comment.setContent(request.getContent());
@@ -133,10 +136,10 @@ public class CommentService {
     @Transactional
     public void deleteComment(Long id, UUID userId, String role) {
         Comment comment = commentRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Comment not found", "COMMENT", "COMMENT_NOT_FOUND"));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found", "COMMENT", ErrorConstants.COMMENT_NOT_FOUND.getCode()));
 
         if (!comment.getUser().getId().equals(userId) && !"ADMIN".equals(role)) {
-            throw new BusinessException("Access denied", "COMMENT", "FORBIDDEN");
+            throw new ForbiddenException("Access denied", HttpStatus.FORBIDDEN, ErrorConstants.FORBIDDEN.getCode());
         }
 
         comment.setDeletedAt(LocalDateTime.now());

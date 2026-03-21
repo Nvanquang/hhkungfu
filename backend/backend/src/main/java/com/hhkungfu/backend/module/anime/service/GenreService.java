@@ -1,6 +1,7 @@
 package com.hhkungfu.backend.module.anime.service;
 
-import com.hhkungfu.backend.common.exception.BusinessException;
+import com.hhkungfu.backend.common.exception.ConflictException;
+import com.hhkungfu.backend.common.exception.ErrorConstants;
 import com.hhkungfu.backend.common.exception.ResourceNotFoundException;
 import com.hhkungfu.backend.module.anime.dto.GenreDto;
 import com.hhkungfu.backend.module.anime.dto.request.CreateGenreRequest;
@@ -30,10 +31,10 @@ public class GenreService {
     @Transactional
     public GenreDto createGenre(CreateGenreRequest request) {
         if (genreRepository.existsBySlug(request.slug())) {
-            throw new BusinessException("Genre slug already exists", "GENRE", "GENRE_ALREADY_EXISTS");
+            throw new ConflictException("Genre slug already exists", ErrorConstants.GENRE_ALREADY_EXISTS.getCode());
         }
         if (genreRepository.existsByName(request.name())) {
-            throw new BusinessException("Genre name already exists", "GENRE", "GENRE_ALREADY_EXISTS");
+            throw new ConflictException("Genre name already exists", ErrorConstants.GENRE_ALREADY_EXISTS.getCode());
         }
 
         Genre genre = genreMapper.toEntity(request);
@@ -43,7 +44,7 @@ public class GenreService {
     @Transactional(readOnly = true)
     public GenreDto getGenreBySlug(String slug) {
         Genre genre = genreRepository.findBySlug(slug)
-            .orElseThrow(() -> new ResourceNotFoundException("Genre not found by slug: " + slug, "GENRE", "GENRE_NOT_FOUND"));
+            .orElseThrow(() -> new ResourceNotFoundException("Genre not found by slug: " + slug, "GENRE", ErrorConstants.GENRE_NOT_FOUND.getCode()));
         return genreMapper.toDto(genre);
     }
 }

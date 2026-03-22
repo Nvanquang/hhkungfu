@@ -1,9 +1,13 @@
 // Grid 6 cột có nút prev/next để phân trang client-side, dùng chung cho section trending và theo thể loại.
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimeCard } from "@/components/features/AnimeCard";
 import { Skeleton } from "@/components/ui";
 import type { AnimeSummary } from "@/types";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface Props {
   items: AnimeSummary[];
@@ -24,6 +28,35 @@ export function PaginatedGrid({
   const totalPages = Math.ceil(items.length / pageSize);
   const safePage = Math.min(page, Math.max(0, totalPages - 1));
   const visible = items.slice(safePage * pageSize, safePage * pageSize + pageSize);
+
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!gridRef.current || isLoading || !visible.length) return;
+    
+    const ctx = gsap.context(() => {
+      const cards = gridRef.current!.children;
+      
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.7,
+          stagger: 0.08,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: gridRef.current,
+            start: "top 85%",
+            toggleActions: "play none none reverse",
+          },
+        }
+      );
+    }, gridRef);
+
+    return () => ctx.revert();
+  }, [isLoading, safePage, items.length]);
 
   if (isLoading) {
     return (
@@ -54,9 +87,11 @@ export function PaginatedGrid({
         </button>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {visible.map((anime) => (
-          <AnimeCard key={anime.id} anime={anime} />
+          <div key={anime.id} className="will-change-[transform,opacity,filter]">
+            <AnimeCard anime={anime} />
+          </div>
         ))}
       </div>
 

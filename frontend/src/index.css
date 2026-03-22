@@ -99,6 +99,12 @@
     @apply bg-background text-foreground antialiased tracking-tight;
   }
 
+  /* Custom Cursor active state */
+  body.custom-cursor-active,
+  body.custom-cursor-active *:not(input):not(textarea) {
+    cursor: none !important;
+  }
+
   /* Cinematic vignette + gentle center lift */
   body::before {
     content: "";

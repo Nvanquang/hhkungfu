@@ -41,10 +41,10 @@ export function GenreSection({
                 type="button"
                 onClick={() => onSelectGenre(g.slug ?? null)}
                 className={cn(
-                  "shrink-0 rounded-full px-4 py-2 text-sm font-medium border",
+                  "shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-out border outline-none",
                   isActive
-                    ? "bg-primary text-primary-foreground border-transparent"
-                    : "bg-background text-foreground border-border hover:bg-muted"
+                    ? "bg-black/80 text-white border-orange-500/60 shadow-[0_0_15px_rgba(255,100,0,0.25)] backdrop-blur-md"
+                    : "bg-black/30 text-white/70 border-white/10 backdrop-blur-sm hover:bg-black/50 hover:text-white"
                 )}
               >
                 {g.nameVi || g.name}

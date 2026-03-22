@@ -111,8 +111,8 @@ export function Header() {
       >
         <div className="container h-full mx-auto px-4 md:px-6 flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary tracking-tight shrink-0">
-            <span>🎬 Hhkungfu</span>
+          <Link to="/" className="flex items-center shrink-0">
+            <img src="/logos/logo-hhkungfu.png" alt="HHKungfu" className="h-20 w-auto object-contain" />
           </Link>
 
           {/* Desktop Navigation */}

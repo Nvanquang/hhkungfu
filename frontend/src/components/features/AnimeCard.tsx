@@ -32,7 +32,7 @@ export function AnimeCard({ anime, className, showDetails = true, onRemove }: An
 
   return (
     <div className={cn("group relative flex flex-col gap-2 w-full", className)}>
-      <Link to={`/anime/${anime.slug}`} className="block relative aspect-[2/3] w-full rounded-md overflow-hidden bg-muted/20 transition-all duration-150 hover:scale-[1.03] hover:shadow-xl hover:shadow-primary/10">
+      <Link to={`/anime/${anime.slug}`} className="block relative aspect-[2/3] w-full rounded-md overflow-hidden bg-muted/20 transition-all duration-300 ease-out hover:-translate-y-1.5 focus-visible:-translate-y-1.5 outline-none">
         {anime.thumbnailUrl ? (
           <img
             src={anime.thumbnailUrl}
@@ -49,9 +49,9 @@ export function AnimeCard({ anime, className, showDetails = true, onRemove }: An
         {/* Gradient Overlay for Text Readability or Hover */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60"></div>
 
-        {/* Hover Play Overlay */}
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <PlayCircle className="w-12 h-12 text-white/90 drop-shadow-lg" />
+        {/* Hover Play Overlay - Slide from bottom with Glassmorphism */}
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center opacity-0 translate-y-4 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out">
+          <PlayCircle className="w-14 h-14 text-white drop-shadow-md" strokeWidth={1.5} />
         </div>
 
         {/* VIP Badge */}
@@ -87,8 +87,8 @@ export function AnimeCard({ anime, className, showDetails = true, onRemove }: An
             </span>
           </div>
 
-          <Link to={`/anime/${anime.slug}`} className="hover:text-primary transition-colors">
-            <h3 className="font-bold text-sm leading-tight line-clamp-1" title={anime.title as string}>
+          <Link to={`/anime/${anime.slug}`} className="hover:text-primary transition-colors outline-none focus-visible:ring-1 focus-visible:ring-primary rounded-sm">
+            <h3 className="font-bold text-sm leading-tight line-clamp-1 tracking-tight" title={anime.title as string}>
               {anime.title}
             </h3>
           </Link>

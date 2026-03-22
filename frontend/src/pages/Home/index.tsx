@@ -3,16 +3,19 @@ import { useMemo, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useHomeData } from "./hooks/useHomeData";
 import { useFeaturedCarousel } from "./hooks/useFeaturedCarousel";
+import { useIntroAnimation } from "./hooks/useIntroAnimation";
 import { HeroSection } from "./components/sections/HeroSection";
 import { TrendingSection } from "./components/sections/TrendingSection";
 import { RecentlyUpdatedSection } from "./components/sections/RecentlyUpdatedSection";
 import { GenreSection } from "./components/sections/GenreSection";
 import { VipBanner } from "./components/sections/VipBanner";
+import { IntroOverlay } from "./components/IntroOverlay";
 import type { AnimeSummary } from "@/types";
 
 export default function Home() {
   const { user } = useAuthStore();
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
+  const { showIntro, dismiss } = useIntroAnimation();
 
   const {
     featured, isFeaturedLoading, isFeaturedError,
@@ -32,12 +35,16 @@ export default function Home() {
 
   return (
     <div className="w-full">
+      {/* ── Cinematic intro overlay ── */}
+      {showIntro && <IntroOverlay onComplete={dismiss} />}
+
       <HeroSection
         featured={featured}
         activeIndex={activeIndex}
         setActiveIndex={setActiveIndex}
         isLoading={isFeaturedLoading}
         isError={isFeaturedError}
+        isPlayingIntro={showIntro}
       />
       <div className="main-container py-6 md:py-8 space-y-10">
 

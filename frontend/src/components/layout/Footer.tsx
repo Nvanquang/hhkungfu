@@ -7,7 +7,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex flex-col items-center md:items-start gap-2">
             <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary tracking-tight">
-              <span>🎬 Hhkungfu</span>
+              <img src="/logos/logo-hhkungfu.png" alt="Hhkungfu Logo" className="h-24 w-auto hover:opacity-90 transition-opacity" />
             </Link>
             <p className="text-sm text-muted-foreground text-center md:text-left">
               © {new Date().getFullYear()} Hhkungfu. Mọi quyền được bảo lưu.

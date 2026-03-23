@@ -91,47 +91,6 @@ CREATE INDEX idx_subtitles_episode ON subtitles (episode_id);
 | `viewcount:ep:{id}` | Không hết | Counter lượt xem realtime |
 | `transcode:progress:{jobId}` | 3600s | Cache tiến trình transcode |
 
----
-
-## 2. Package Structure
-
-```
-com.hhkungfu.episode/
-├── controller/
-│   └── EpisodeController.java     -- GET/POST/PUT/DELETE episode
-├── service/
-│   └── EpisodeService.java
-├── dto/
-│   ├── request/
-│   │   ├── EpisodeCreateRequest.java
-│   │   └── EpisodeUpdateRequest.java
-│   └── response/
-│       ├── EpisodeDto.java
-│       └── StreamInfoDto.java
-├── entity/
-│   ├── Episode.java
-│   └── Subtitle.java
-└── repository/
-    ├── EpisodeRepository.java
-    └── SubtitleRepository.java
-
-com.hhkungfu.video/
-├── controller/
-│   ├── VideoUploadController.java   -- POST /admin/episodes/:id/upload
-│   ├── TranscodeController.java     -- GET SSE + polling
-│   └── HlsStreamController.java     -- GET /files/hls/**
-├── service/
-│   ├── VideoUploadService.java      -- nhận file, tạo job
-│   ├── TranscodeService.java        -- @Async FFmpeg pipeline
-│   ├── HlsService.java              -- serve file HLS + Range header
-│   └── StorageService.java          -- interface: local hoặc R2
-├── entity/
-│   ├── VideoFile.java
-│   └── TranscodeJob.java
-└── repository/
-    ├── VideoFileRepository.java
-    └── TranscodeJobRepository.java
-```
 
 ---
 
@@ -518,14 +477,14 @@ ffmpeg -i input.mp4 \
 // Trong EpisodeService.getStreamInfo()
 public StreamInfoDto getStreamInfo(Long episodeId, UUID userId) {
     Episode ep = episodeRepository.findById(episodeId)
-        .orElseThrow(() -> new ResourceNotFoundException("EPISODE_NOT_FOUND"));
+        .orElseThrow(() -> new ResourceNotFoundException("Episode not found", "EPISODE", ErrorConstants.EPISODE_NOT_FOUND.getCode()));
 
     if (ep.getVideoStatus() != VideoStatus.READY)
-        throw new BusinessException("EPISODE_NOT_READY", 409);
+        throw new BusinessException("Episode not ready", "EPISODE", ErrorConstants.EPISODE_NOT_READY.getCode());
 
     if (ep.isVipOnly()) {
         if (userId == null)
-            throw new BusinessException("VIP_REQUIRED", 403);
+            throw new BusinessException("VIP required", "EPISODE", ErrorConstants.VIP_REQUIRED.getCode());
 
         // Check cache Redis trước
         Boolean cachedVip = redisService.get("vip:status:" + userId, Boolean.class);
@@ -535,7 +494,7 @@ public StreamInfoDto getStreamInfo(Long episodeId, UUID userId) {
             cachedVip = isVip;
         }
         if (!cachedVip)
-            throw new BusinessException("VIP_REQUIRED", 403);
+            throw new BusinessException("VIP required", "EPISODE", ErrorConstants.VIP_REQUIRED.getCode());
     }
 
     // Increment view count

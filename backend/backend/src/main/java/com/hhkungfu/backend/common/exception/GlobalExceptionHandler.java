@@ -9,6 +9,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import org.springframework.security.access.AccessDeniedException;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,6 +33,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDeniedException(ForbiddenException ex) {
         return buildResponse(false, "Access denied", ex.getErrorCode(), null, ex.getStatus());
+    }
+
+    // ── Spring Security Native: không có quyền (403) ────────────────────────
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleNativeAccessDeniedException(AccessDeniedException ex) {
+        return buildResponse(false, "Do not have permission to access", "FORBIDDEN", null, HttpStatus.FORBIDDEN);
     }
 
     // ── Validation: @Valid trên @RequestBody ─────────────────────────────────
@@ -89,7 +97,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
         // Không lộ stack trace ra ngoài; log nội bộ ở đây nếu cần
-        return buildResponse(false, "Internal server error", ErrorConstants.INTERNAL_SERVER_ERROR.getCode(),
+        return buildResponse(false, "Internal server error",
+                ErrorConstants.INTERNAL_SERVER_ERROR.getCode(),
                 null,
                 HttpStatus.INTERNAL_SERVER_ERROR);
     }

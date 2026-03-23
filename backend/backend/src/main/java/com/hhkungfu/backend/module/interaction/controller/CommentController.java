@@ -17,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,7 @@ public class CommentController {
         private final CommentService commentService;
 
         @GetMapping("/episodes/{episodeId}/comments")
+        @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
         @ApiMessage("Get comments successfully")
         @Operation(summary = "Get episode comments", description = "Get paginated root comments for an episode")
         @ApiResponse(responseCode = "200", description = "Comments retrieved successfully")
@@ -48,6 +50,7 @@ public class CommentController {
         }
 
         @GetMapping("/comments/{commentId}/replies")
+        @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
         @ApiMessage("Get replies successfully")
         @Operation(summary = "Get comment replies", description = "Get paginated replies for a comment")
         @ApiResponse(responseCode = "200", description = "Replies retrieved successfully")
@@ -63,6 +66,7 @@ public class CommentController {
         }
 
         @PostMapping("/episodes/{episodeId}/comments")
+        @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
         @ApiMessage("Create comment successfully")
         @Operation(summary = "Create comment or reply", description = "Create a new comment or a reply to an existing comment")
         @ApiResponse(responseCode = "201", description = "Comment created successfully")
@@ -80,6 +84,7 @@ public class CommentController {
         }
 
         @PatchMapping("/comments/{id}")
+        @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
         @ApiMessage("Update comment successfully")
         @Operation(summary = "Update comment", description = "Update the content of an existing comment")
         @ApiResponse(responseCode = "200", description = "Comment updated successfully")
@@ -95,6 +100,7 @@ public class CommentController {
         }
 
         @DeleteMapping("/comments/{id}")
+        @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
         @ApiMessage("Delete comment successfully")
         @Operation(summary = "Delete comment", description = "Soft delete a comment (by owner or admin)")
         @ApiResponse(responseCode = "204", description = "Comment deleted successfully")
@@ -114,6 +120,7 @@ public class CommentController {
         }
 
         @PostMapping("/comments/{id}/like")
+        @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
         @ApiMessage("Toggle like successfully")
         @Operation(summary = "Toggle like", description = "Toggle like/unlike for a comment")
         @ApiResponse(responseCode = "200", description = "Like toggled successfully")

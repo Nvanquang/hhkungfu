@@ -26,11 +26,31 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
+const isTokenExpired = (token: string) => {
+  try {
+    const payloadBase64 = token.split(".")[1];
+    const decodedJson = atob(payloadBase64);
+    const decoded = JSON.parse(decodedJson);
+    const currentTime = Date.now() / 1000;
+
+    // Nếu exp bé hơn thời gian hiện tại (có bù trù 5 giây) -> Hết hạn
+    return decoded.exp < currentTime + 5;
+  } catch (e) {
+    return true; // Token rác, không parse được coi như hết hạn luôn
+  }
+};
+
 // Request interceptor: connect JWT
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken;
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    if (!isTokenExpired(token)) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    else {
+      useAuthStore.getState().logout();
+      toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+    }
   }
   return config;
 });

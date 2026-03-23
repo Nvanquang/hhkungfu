@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,6 +31,7 @@ public class BookmarkController {
     private final BookmarkService bookmarkService;
 
     @PostMapping("/{animeId}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Bookmark thành công")
     @Operation(summary = "Add bookmark", description = "Bookmark an anime")
     @ApiResponse(responseCode = "201", description = "Anime bookmarked successfully")
@@ -42,6 +44,7 @@ public class BookmarkController {
     }
 
     @DeleteMapping("/{animeId}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Xóa bookmark thành công")
     @Operation(summary = "Remove bookmark", description = "Remove an anime from bookmarks")
     @ApiResponse(responseCode = "204", description = "Bookmark removed successfully")
@@ -54,6 +57,7 @@ public class BookmarkController {
     }
 
     @GetMapping("/{animeId}/status")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Kiểm tra trạng thái bookmark thành công")
     @Operation(summary = "Check bookmark status", description = "Check if an anime is bookmarked by current user")
     @ApiResponse(responseCode = "200", description = "Status retrieved successfully")
@@ -66,6 +70,7 @@ public class BookmarkController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Lấy danh sách bookmark thành công")
     @Operation(summary = "Get my bookmarks", description = "Get list of bookmarked anime")
     @ApiResponse(responseCode = "200", description = "Bookmarks retrieved successfully")

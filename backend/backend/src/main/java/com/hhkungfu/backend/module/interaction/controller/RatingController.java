@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,6 +28,7 @@ public class RatingController {
     private final RatingService ratingService;
 
     @PostMapping("/ratings/anime/{animeId}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Đánh giá thành công")
     @Operation(summary = "Rate anime", description = "Submit or update rating for an anime")
     @ApiResponse(responseCode = "200", description = "Rating submitted successfully")
@@ -47,6 +49,7 @@ public class RatingController {
     }
 
     @GetMapping("/ratings/anime/{animeId}/me")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Lấy đánh giá của tôi thành công")
     @Operation(summary = "Get my rating", description = "Get current user rating for a specific anime")
     @ApiResponse(responseCode = "200", description = "Rating retrieved successfully")
@@ -59,6 +62,7 @@ public class RatingController {
     }
 
     @GetMapping("/ratings/anime/{animeId}/summary")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Lấy thông tin đánh giá tổng quan thành công")
     @Operation(summary = "Get rating summary", description = "Get average score and distribution for an anime")
     @ApiResponse(responseCode = "200", description = "Summary retrieved successfully")

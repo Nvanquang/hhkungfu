@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -61,7 +63,8 @@ public class AnimeController {
     @ApiMessage("Get trending animes successfully")
     @Operation(summary = "Get trending animes", description = "Get list of trending animes")
     @ApiResponse(responseCode = "200", description = "Trending animes retrieved successfully")
-    public ResponseEntity<PageResponse<AnimeSummaryDto>> getTrendingAnimes(@RequestParam(name = "limit", defaultValue = "10") int limit) {
+    public ResponseEntity<PageResponse<AnimeSummaryDto>> getTrendingAnimes(
+            @RequestParam(name = "limit", defaultValue = "10") int limit) {
         log.info("REST request to get trending animes with limit: {}", limit);
         return ResponseEntity.ok(animeService.getFeaturedAnimes(limit));
     }
@@ -83,7 +86,7 @@ public class AnimeController {
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "limit", defaultValue = "10") int limit) {
         log.info("REST request to get recently updated animes");
-        Pageable pageable = org.springframework.data.domain.PageRequest.of(page > 0 ? page - 1 : 0, limit);
+        Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, limit);
         return ResponseEntity.ok(animeService.getRecentlyUpdated(pageable));
     }
 
@@ -91,7 +94,8 @@ public class AnimeController {
     @ApiMessage("Get related animes successfully")
     @Operation(summary = "Get related animes", description = "Get list of related animes by ID")
     @ApiResponse(responseCode = "200", description = "Related animes retrieved successfully")
-    public ResponseEntity<PageResponse<AnimeSummaryDto>> getRelatedAnimes(@PathVariable("id") Long id, Pageable pageable) {
+    public ResponseEntity<PageResponse<AnimeSummaryDto>> getRelatedAnimes(@PathVariable("id") Long id,
+            Pageable pageable) {
         log.info("REST request to get related animes for ID: {}", id);
         return ResponseEntity.ok(animeService.getRelated(id, pageable));
     }

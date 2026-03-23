@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -29,6 +30,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/{id}/profile")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Lấy thông tin profile thành công")
     @Operation(summary = "Get user profile", description = "Get user profile by ID")
     @ApiResponse(responseCode = "200", description = "Profile retrieved successfully")
@@ -38,6 +40,7 @@ public class UserController {
     }
 
     @GetMapping("/me/profile")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Lấy thông tin profile thành công")
     @Operation(summary = "Get my profile", description = "Get current user profile")
     @ApiResponse(responseCode = "200", description = "Profile retrieved successfully")
@@ -49,6 +52,7 @@ public class UserController {
     }
 
     @PatchMapping("/me/profile")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Cập nhật profile thành công")
     @Operation(summary = "Update user profile", description = "Update current user profile")
     @ApiResponse(responseCode = "200", description = "Profile updated successfully")
@@ -60,6 +64,7 @@ public class UserController {
     }
 
     @PostMapping("/me/password-change/request")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Yêu cầu đổi mật khẩu thành công. Vui lòng kiểm tra email để lấy mã OTP.")
     @Operation(summary = "Request change password", description = "Request to change current user password and send OTP")
     @ApiResponse(responseCode = "200", description = "OTP sent successfully")
@@ -72,6 +77,7 @@ public class UserController {
     }
 
     @PostMapping("/me/password-change/confirm")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Đổi mật khẩu thành công")
     @Operation(summary = "Confirm change password", description = "Confirm password change using OTP")
     @ApiResponse(responseCode = "200", description = "Password changed successfully")

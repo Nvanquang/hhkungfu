@@ -26,6 +26,18 @@ spring:
         one-indexed-parameters: true
         size-parameter: limit
 
+  task:
+    execution:
+      thread-name-prefix: hhkungfu-task-
+      pool:
+        core-size: 1
+        max-size: 50
+        queue-capacity: 1000
+    scheduling:
+      thread-name-prefix: hhkungfu-scheduling-
+      pool:
+        size: 10
+
   mail:
     host: smtp.gmail.com
     port: 587

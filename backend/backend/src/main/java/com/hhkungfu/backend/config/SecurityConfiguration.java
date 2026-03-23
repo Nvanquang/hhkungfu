@@ -12,6 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -37,6 +38,14 @@ public class SecurityConfiguration {
                                 .cors(org.springframework.security.config.Customizer.withDefaults())
                                 .exceptionHandling(e -> e.authenticationEntryPoint(customAuthenticationEntryPoint))
                                 .authorizeHttpRequests(authz -> authz
+                                                .requestMatchers(HttpMethod.GET,
+                                                                "/api/v1/animes",
+                                                                "/api/v1/animes/**",
+                                                                "/api/v1/genres",
+                                                                "/api/v1/genres/**",
+                                                                "/api/v1/studios",
+                                                                "/api/v1/studios/**")
+                                                .permitAll()
                                                 .requestMatchers(
                                                                 "/api/v1/auth/register",
                                                                 "/api/v1/auth/login",

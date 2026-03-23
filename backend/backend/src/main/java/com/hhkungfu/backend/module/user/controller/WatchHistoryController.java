@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,6 +31,7 @@ public class WatchHistoryController {
     private final WatchHistoryService watchHistoryService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Cập nhật tiến trình xem thành công")
     @Operation(summary = "Update watch progress", description = "Save or update watching progress for an episode")
     @ApiResponse(responseCode = "200", description = "Progress updated successfully")
@@ -42,6 +44,7 @@ public class WatchHistoryController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Lấy lịch sử xem thành công")
     @Operation(summary = "Get watch history", description = "Get list of recently watched anime")
     @ApiResponse(responseCode = "200", description = "History retrieved successfully")
@@ -53,6 +56,7 @@ public class WatchHistoryController {
     }
 
     @GetMapping("/anime/{animeId}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Lấy tiến trình xem anime thành công")
     @Operation(summary = "Get anime watch history", description = "Get last watched episode progress for a specific anime")
     @ApiResponse(responseCode = "200", description = "Anime history retrieved successfully")
@@ -65,6 +69,7 @@ public class WatchHistoryController {
     }
 
     @DeleteMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @ApiMessage("Xóa lịch sử xem thành công")
     @Operation(summary = "Clear watch history", description = "Delete all watch history entries for current user")
     @ApiResponse(responseCode = "204", description = "History cleared successfully")

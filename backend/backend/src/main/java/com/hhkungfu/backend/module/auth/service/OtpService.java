@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.hhkungfu.backend.common.exception.BadRequestAlertException;
 import com.hhkungfu.backend.common.exception.ErrorConstants;
+import com.hhkungfu.backend.module.auth.dto.OtpEmailPayload;
 import com.hhkungfu.backend.module.auth.entity.UserOtp;
 import com.hhkungfu.backend.module.auth.enums.OtpType;
 import com.hhkungfu.backend.module.auth.repository.UserOtpRepository;
@@ -31,7 +32,8 @@ public class OtpService {
     public void generateAndSendOtp(User user, OtpType otpType) {
         String rateLimitKey = RedisKeys.rateLimitOtp(user.getEmail());
         if (Boolean.TRUE.equals(redisTemplate.hasKey(rateLimitKey))) {
-            throw new BadRequestAlertException("Thao tác quá nhanh, vui lòng thử lại sau.", HttpStatus.TOO_MANY_REQUESTS,
+            throw new BadRequestAlertException("Thao tác quá nhanh, vui lòng thử lại sau.",
+                    HttpStatus.TOO_MANY_REQUESTS,
                     ErrorConstants.OTP_RATE_LIMIT.getCode());
         }
 
@@ -59,7 +61,14 @@ public class OtpService {
         String title = otpType == OtpType.VERIFY_EMAIL ? "Mã xác thực tài khoản HHKungfu"
                 : otpType == OtpType.CHANGE_PASSWORD ? "Mã xác nhận đổi mật khẩu HHKungfu"
                         : "Mã khôi phục mật khẩu HHKungfu";
-        mailService.sendOtpEmail(user, otpCode, title);
+
+        OtpEmailPayload payload = OtpEmailPayload.builder()
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .otp(otpCode)
+                .titleKey(title)
+                .build();
+        mailService.sendOtpEmail(payload);
     }
 
     @Transactional

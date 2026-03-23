@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
-import com.hhkungfu.backend.module.user.entity.User;
+import com.hhkungfu.backend.module.auth.dto.OtpEmailPayload;
 
 import java.nio.charset.StandardCharsets;
 
@@ -30,16 +30,15 @@ public class MailService {
         this.templateEngine = templateEngine;
     }
 
-    @Async
-    public void sendOtpEmail(User user, String otpCode, String titleKey) {
-        if (user.getEmail() == null) {
-            log.debug("Email doesn't exist for user '{}'", user.getId());
+    public void sendOtpEmailAsync(OtpEmailPayload payload) {
+        if (payload.getEmail() == null) {
+            log.debug("Email doesn't exist for user '{}'", payload.getEmail());
             return;
         }
 
         Context context = new Context();
-        context.setVariable("user", user);
-        context.setVariable("otpCode", otpCode);
+        context.setVariable("username", payload.getUsername());
+        context.setVariable("otpCode", payload.getOtp());
         context.setVariable("baseUrl", baseUrl);
 
         String content = templateEngine.process("mail/otpEmail", context);
@@ -47,14 +46,20 @@ public class MailService {
         try {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             MimeMessageHelper message = new MimeMessageHelper(mimeMessage, false, StandardCharsets.UTF_8.name());
-            message.setTo(user.getEmail());
+            message.setTo(payload.getEmail());
             message.setFrom("no-reply@hhkungfu.com");
-            message.setSubject(titleKey);
+            message.setSubject(payload.getTitleKey());
             message.setText(content, true);
             javaMailSender.send(mimeMessage);
-            log.debug("Sent email to User '{}'", user.getEmail());
+            log.debug("Sent email to User '{}'", payload.getEmail());
         } catch (MessagingException e) {
-            log.warn("Email could not be sent to user '{}'", user.getEmail(), e);
+            log.warn("Email could not be sent to user '{}'", payload.getEmail(), e);
         }
+    }
+
+    @Async
+    public void sendOtpEmail(OtpEmailPayload payload) {
+        log.debug("Sending activation email to '{}'", payload.getEmail());
+        this.sendOtpEmailAsync(payload);
     }
 }

@@ -43,6 +43,8 @@ export function Header() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
+  const isAdmin = user?.role === "ADMIN";
+
   const debouncedQuery = useDebouncedValue(searchQuery.trim(), 300);
 
   const { data: genreRes } = useQuery({
@@ -102,7 +104,7 @@ export function Header() {
 
       <header
         className={cn(
-          "fixed top-0 w-full z-50 transition-all duration-300",
+          "fixed top-0 left-0 right-0 z-50 transition-[height,background-color,border-color,box-shadow] duration-300",
           isScrolled
             ? "h-16 bg-background/80 backdrop-blur-md border-b border-border/50 shadow-sm"
             : "h-20 bg-gradient-to-b from-background/90 to-transparent",
@@ -111,12 +113,18 @@ export function Header() {
       >
         <div className="container h-full mx-auto px-4 md:px-6 flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center shrink-0">
+          <Link to="/" className={cn(
+            "flex items-center shrink-0 transition-opacity duration-300",
+            isFocused && "hidden md:flex"
+          )}>
             <img src="/logos/logo-hhkungfu.png" alt="HHKungfu" className="h-20 w-auto object-contain" />
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6 flex-1 justify-center relative">
+          {/* Desktop & Mobile Navigation */}
+          <div className={cn(
+            "items-center gap-6 flex-1 justify-center relative transition-all duration-300",
+            isFocused ? "flex" : "hidden md:flex"
+          )}>
 
             {/* Search Component */}
             <div className={cn(
@@ -314,7 +322,7 @@ export function Header() {
                   </div>
                   <div className="hidden lg:flex flex-col items-start leading-none gap-1 ml-1">
                     <span className="text-xs font-bold truncate max-w-[80px]">{user.username}</span>
-                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Thành viên</span>
+                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">{isAdmin ? "Quản trị viên" : "Thành viên"}</span>
                   </div>
                   <span className="text-muted-foreground ml-1 opacity-50">▾</span>
                 </DropdownMenuTrigger>
@@ -362,8 +370,20 @@ export function Header() {
           </div>
 
           {/* Mobile icons */}
-          <div className="md:hidden flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-muted/50 transition-colors" onClick={() => navigate("/search")} aria-label="Search">
+          <div className={cn(
+            "md:hidden items-center gap-2",
+            isFocused ? "hidden" : "flex"
+          )}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-xl hover:bg-muted/50 transition-colors"
+              onClick={() => {
+                setIsFocused(true);
+                setTimeout(() => inputRef.current?.focus(), 100);
+              }}
+              aria-label="Search"
+            >
               <Search className="w-5 h-5" />
             </Button>
             <Button

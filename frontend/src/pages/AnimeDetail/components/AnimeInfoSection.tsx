@@ -6,9 +6,11 @@ import { cn } from "@/lib/utils";
 import type { Genre, Studio } from "@/types";
 import { userService } from "@/services/userService";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   animeId: number;
+  slug: string;
   title: string;
   titleOther: string | null;
   thumbnailUrl?: string | null;
@@ -25,13 +27,14 @@ interface Props {
 }
 
 export function AnimeInfoSection({
-  animeId, title, titleOther, thumbnailUrl, hasVipContent,
+  animeId, slug, title, titleOther, thumbnailUrl, hasVipContent,
   malScore, viewCount, status, type, totalEpisodes, year, studios, genres,
   isBookmarked: initialIsBookmarked,
 }: Props) {
   const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked);
   const [hoverRating, setHoverRating] = useState(0);
   const [userRating, setUserRating] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserRating = async () => {
@@ -177,7 +180,7 @@ export function AnimeInfoSection({
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3 pt-4 md:pt-3">
-          <Button size="lg" className="gap-2 w-full sm:w-auto font-bold shadow-md shadow-primary/20 hover:scale-[1.02] transition-transform">
+          <Button size="lg" className="gap-2 w-full sm:w-auto font-bold shadow-md shadow-primary/20 hover:scale-[1.02] transition-transform" onClick={() => navigate(`/watch/${slug}/1`)}>
             <Play className="h-4 w-4 fill-current" /> ▶ Xem Tập 1
           </Button>
           <Button

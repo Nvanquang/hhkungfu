@@ -5,36 +5,37 @@ import java.time.ZonedDateTime;
 
 @Builder
 public record WatchHistoryDto(
-    Long animeId,
-    String animeTitle,
-    String animeSlug,
-    String thumbnail,
-    Long lastEpisodeId,
-    Integer lastEpisodeNumber,
-    String lastEpisodeTitle,
-    Integer durationSeconds,
-    Integer progressSeconds,
-    ZonedDateTime watchedAt,
-    Boolean isCompleted
-) {
+        Long animeId,
+        String animeTitle,
+        String animeTitleVi,
+        String animeSlug,
+        String banner,
+        Long lastEpisodeId,
+        Integer lastEpisodeNumber,
+        String lastEpisodeTitle,
+        Double durationSeconds,
+        Integer progressSeconds,
+        ZonedDateTime watchedAt,
+        Boolean isCompleted) {
     // Required for BUILDER and standard record usage
     public WatchHistoryDto(
-            Long animeId, 
-            String animeTitle, 
+            Long animeId,
+            String animeTitle,
+            String animeTitleVi,
             String animeSlug,
-            String thumbnail, 
-            Long lastEpisodeId, 
-            Integer lastEpisodeNumber, 
+            String banner,
+            Long lastEpisodeId,
+            Integer lastEpisodeNumber,
             String lastEpisodeTitle,
-            Integer durationSeconds,
-            Integer progressSeconds, 
+            Double durationSeconds,
+            Integer progressSeconds,
             ZonedDateTime watchedAt,
-            Boolean isCompleted
-    ) {
+            Boolean isCompleted) {
         this.animeId = animeId;
         this.animeTitle = animeTitle;
+        this.animeTitleVi = animeTitleVi;
         this.animeSlug = animeSlug;
-        this.thumbnail = thumbnail;
+        this.banner = banner;
         this.lastEpisodeId = lastEpisodeId;
         this.lastEpisodeNumber = lastEpisodeNumber;
         this.lastEpisodeTitle = lastEpisodeTitle;

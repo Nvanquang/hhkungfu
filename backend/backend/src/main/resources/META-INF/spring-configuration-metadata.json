@@ -61,8 +61,48 @@
       "type": "java.lang.String"
     },
     {
-      "name": "quangkhongbiet.firebase.config-path",
+      "name": "ffmpeg.path",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "ffmpeg.ffprobe.path",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "storage.type",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "storage.local.base-path",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "storage.local.base-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "storage.r2.account-id",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "storage.r2.access-key",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "storage.r2.secret-key",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "storage.r2.bucket",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "storage.r2.base-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "storage.r2.endpoint",
       "type": "java.lang.String"
     }
   ]
-} 
+}

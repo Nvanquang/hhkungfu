@@ -24,8 +24,9 @@ export interface UserProfileDto extends UserDto {
 export interface WatchHistoryDto {
   animeId: number;
   animeTitle: string;
+  animeTitleVi: string;
   animeSlug: string;
-  thumbnail: string;
+  banner: string;
   lastEpisodeId: number;
   lastEpisodeNumber: number;
   lastEpisodeTitle: string;

@@ -19,6 +19,7 @@ const Home = lazy(() => import("@/pages/Home"));
 const AnimeCatalog = lazy(() => import("@/pages/AnimeCatalog"));
 const AnimeDetail = lazy(() => import("@/pages/AnimeDetail"));
 const Search = lazy(() => import("@/pages/Search"));
+const Watch = lazy(() => import("@/pages/Watch"));
 
 // User module pages
 const Profile = lazy(() => import("@/pages/Profile"));
@@ -66,6 +67,9 @@ function AppContent() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/oauth-success" element={<OAuthSuccess />} />
           </Route>
+
+          {/* Watch page — standalone layout (no Header/Footer) */}
+          <Route path="/watch/:animeSlug/:episodeNumber" element={<Watch />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

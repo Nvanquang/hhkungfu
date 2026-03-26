@@ -292,10 +292,10 @@ export function HeroSection({ featured, activeIndex, setActiveIndex, isLoading, 
       )}
 
       {/* ── Layer 2: Cinematic gradient overlays ── */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/60 to-black/10 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
-      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
-      <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent pointer-events-none" />
+      <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/25 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-black/10 pointer-events-none" />
 
       {/* ── Layer 3: Moving light sweep ── */}
       <div

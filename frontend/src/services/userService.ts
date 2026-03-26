@@ -51,6 +51,10 @@ export const userService = {
     await api.delete("/users/me/watch-history");
   },
 
+  clearWatchHistoryByAnimeId: async (episodeId: number): Promise<void> => {
+    await api.delete(`/users/me/watch-history/${episodeId}`);
+  },
+
   // Bookmarks
   getBookmarks: async (page = 1, limit = 20): Promise<PageResponse<BookmarkDto>> => {
     const { data } = await api.get<ApiResponse<PageResponse<BookmarkDto>>>("/users/me/bookmarks", {

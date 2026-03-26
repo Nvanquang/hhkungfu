@@ -52,6 +52,7 @@ export default function AnimeDetail() {
         />
         <AnimeInfoSection
           animeId={anime.id}
+          slug={anime.slug as string}
           title={anime.title as string}
           titleOther={titleOther}
           thumbnailUrl={anime.thumbnailUrl}
@@ -70,6 +71,8 @@ export default function AnimeDetail() {
         <hr className="my-8 border-border/40 hidden md:block" />
 
         <DetailTabs
+          animeId={anime.id}
+          animeSlug={anime.slug as string}
           episodeCount={mockEpisodeCount}
           overviewProps={{
             description: anime.description,

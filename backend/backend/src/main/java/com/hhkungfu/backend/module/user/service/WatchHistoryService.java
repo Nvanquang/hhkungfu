@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.hhkungfu.backend.common.exception.ErrorConstants;
 import com.hhkungfu.backend.common.exception.ResourceNotFoundException;
+import com.hhkungfu.backend.common.response.PageResponse;
 import com.hhkungfu.backend.module.episode.entity.Episode;
 import com.hhkungfu.backend.module.episode.repository.EpisodeRepository;
 import com.hhkungfu.backend.module.user.dto.WatchHistoryDto;
@@ -48,9 +49,18 @@ public class WatchHistoryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<WatchHistoryDto> getMyWatchHistory(String userIdStr, Pageable pageable) {
+    public PageResponse<WatchHistoryDto> getMyWatchHistory(String userIdStr, Pageable pageable) {
         UUID userId = UUID.fromString(userIdStr);
-        return watchHistoryRepository.findLatestGroupByAnime(userId, pageable);
+        Page<WatchHistoryDto> page = watchHistoryRepository.findLatestGroupByAnime(userId, pageable);
+        return PageResponse.<WatchHistoryDto>builder()
+                .items(page.getContent())
+                .pagination(PageResponse.PaginationMeta.builder()
+                        .page(page.getNumber() + 1)
+                        .limit(page.getSize())
+                        .total(page.getTotalElements())
+                        .totalPages(page.getTotalPages())
+                        .build())
+                .build();
     }
 
     @Transactional(readOnly = true)
@@ -72,16 +82,23 @@ public class WatchHistoryService {
         return WatchHistoryDto.builder()
                 .animeId(animeId)
                 .animeTitle(episode.getAnime().getTitle())
+                .animeTitleVi(episode.getAnime().getTitleVi())
                 .animeSlug(episode.getAnime().getSlug())
-                .thumbnail(episode.getAnime().getThumbnailUrl())
+                .banner(episode.getAnime().getBannerUrl())
                 .lastEpisodeId(episode.getId())
                 .lastEpisodeNumber(episode.getEpisodeNumber())
                 .lastEpisodeTitle(episode.getTitle())
-                .durationSeconds(episode.getAnime().getEpisodeDuration())
+                .durationSeconds(episode.getDurationSeconds())
                 .progressSeconds(history.getProgressSeconds())
                 .watchedAt(history.getWatchedAt())
                 .isCompleted(history.isCompleted())
                 .build();
+    }
+
+    @Transactional
+    public void clearHistoryByAnimeId(String userIdStr, Long episodeId) {
+        UUID userId = UUID.fromString(userIdStr);
+        watchHistoryRepository.deleteByIdUserIdAndIdEpisodeId(userId, episodeId);
     }
 
     @Transactional

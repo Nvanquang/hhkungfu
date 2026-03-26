@@ -3,7 +3,6 @@ package com.hhkungfu.backend.module.user.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -16,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import com.hhkungfu.backend.common.annotation.ApiMessage;
 import com.hhkungfu.backend.common.exception.AuthException;
+import com.hhkungfu.backend.common.response.PageResponse;
 import com.hhkungfu.backend.common.util.SecurityUtil;
 import com.hhkungfu.backend.module.user.dto.WatchHistoryDto;
 import com.hhkungfu.backend.module.user.dto.WatchProgressRequest;
@@ -48,7 +48,7 @@ public class WatchHistoryController {
     @ApiMessage("Lấy lịch sử xem thành công")
     @Operation(summary = "Get watch history", description = "Get list of recently watched anime")
     @ApiResponse(responseCode = "200", description = "History retrieved successfully")
-    public ResponseEntity<Page<WatchHistoryDto>> getMyHistory(@PageableDefault(size = 20) Pageable pageable) {
+    public ResponseEntity<PageResponse<WatchHistoryDto>> getMyHistory(@PageableDefault(size = 20) Pageable pageable) {
         log.info("REST request to get my watch history");
         String userId = SecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new AuthException("Chưa đăng nhập", HttpStatus.UNAUTHORIZED, "UNAUTHORIZED"));
@@ -66,6 +66,19 @@ public class WatchHistoryController {
                 .orElseThrow(() -> new AuthException("Chưa đăng nhập", HttpStatus.UNAUTHORIZED, "UNAUTHORIZED"));
         WatchHistoryDto history = watchHistoryService.getAnimeWatchHistory(userId, animeId);
         return ResponseEntity.ok(history);
+    }
+
+    @DeleteMapping("/{episodeId}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @ApiMessage("Xóa lịch sử xem anime thành công")
+    @Operation(summary = "Clear watch history by anime id", description = "Delete watch history entry for a specific anime")
+    @ApiResponse(responseCode = "204", description = "History cleared successfully")
+    public ResponseEntity<Void> clearHistoryByAnimeId(@PathVariable("episodeId") Long episodeId) {
+        log.info("REST request to clear watch history by anime id: {}", episodeId);
+        String userId = SecurityUtil.getCurrentUserId()
+                .orElseThrow(() -> new AuthException("Chưa đăng nhập", HttpStatus.UNAUTHORIZED, "UNAUTHORIZED"));
+        watchHistoryService.clearHistoryByAnimeId(userId, episodeId);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping

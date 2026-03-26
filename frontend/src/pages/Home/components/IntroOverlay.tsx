@@ -37,10 +37,10 @@ export function IntroOverlay({ onComplete }: Props) {
       // ----- GPU Initial Setup -----
       gsap.set(overlay, { backgroundColor: "#000" });
       gsap.set(container, { perspective: 800 });
-      
+
       // Letters start slightly scaled up and dark
       gsap.set(word, { scale: 1.1, z: -100, transformStyle: "preserve-3d" });
-      gsap.set(letterEls, { 
+      gsap.set(letterEls, {
         opacity: 0,
         rotateX: 10,
         y: 10,
@@ -55,10 +55,10 @@ export function IntroOverlay({ onComplete }: Props) {
         // Dark edge shading creating 3D emboss layer effect
         textShadow: "1px 1px 0 #444, 2px 2px 0 #222, 3px 3px 0 #111, 4px 4px 0 #000, 5px 5px 0 #000, 0px 0px 0px rgba(255, 69, 0, 0)",
       });
-      
-      gsap.set(flare, { 
-        opacity: 0, 
-        scale: 0.1, 
+
+      gsap.set(flare, {
+        opacity: 0,
+        scale: 0.1,
       });
 
       // ----- Cinematic Timeline -----
@@ -138,14 +138,14 @@ export function IntroOverlay({ onComplete }: Props) {
   }, []);
 
   return (
-    <div 
-      ref={overlayRef} 
+    <div
+      ref={overlayRef}
       className="fixed inset-0 z-[9999] flex items-center justify-center overflow-hidden pointer-events-none select-none bg-black"
     >
       <div ref={containerRef} className="relative w-full h-full flex items-center justify-center">
-        
+
         {/* The cinematic flare in the background (Replaces 80 laggy divs) */}
-        <div 
+        <div
           ref={flareRef}
           className="absolute inset-0 pointer-events-none flex justify-center items-center"
         >
@@ -159,8 +159,8 @@ export function IntroOverlay({ onComplete }: Props) {
         {/* Text Word */}
         <div ref={lettersRef} className="flex font-bold" style={{ gap: "2px", willChange: "transform" }}>
           {LETTERS.map((char, i) => (
-            <span 
-              key={i} 
+            <span
+              key={i}
               className="intro-letter relative inline-block text-center"
               style={{
                 fontFamily: "'Playfair Display Black', 'Cinzel Decorative', 'Impact', 'Rockwell', serif", // Aggressive sharp serif / ultra-bold
@@ -178,7 +178,7 @@ export function IntroOverlay({ onComplete }: Props) {
             </span>
           ))}
         </div>
-        
+
       </div>
     </div>
   );

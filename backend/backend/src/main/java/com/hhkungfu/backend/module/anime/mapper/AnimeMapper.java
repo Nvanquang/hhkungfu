@@ -5,6 +5,7 @@ import com.hhkungfu.backend.module.anime.dto.AnimeSummaryDto;
 import com.hhkungfu.backend.module.anime.dto.request.CreateAnimeRequest;
 import com.hhkungfu.backend.module.anime.dto.request.UpdateAnimeRequest;
 import com.hhkungfu.backend.module.anime.entity.Anime;
+import com.hhkungfu.backend.module.anime.repository.projection.AnimeRecentUpdateProjection;
 import org.mapstruct.*;
 
 @Mapper(componentModel = "spring", uses = {GenreMapper.class, StudioMapper.class})
@@ -16,6 +17,8 @@ public interface AnimeMapper {
     AnimeDetailDto toDetailDto(Anime anime);
 
     AnimeSummaryDto toSummaryDto(Anime anime);
+
+    AnimeSummaryDto projectionToSummaryDto(AnimeRecentUpdateProjection projection);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "viewCount", ignore = true)

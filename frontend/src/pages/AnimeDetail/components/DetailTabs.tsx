@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { EpisodesTab } from "./tabs/EpisodesTab";
 import { CommentsTab } from "./tabs/CommentsTab";
+import { useAnimeEpisodes } from "../hooks/useAnimeEpisodes";
 
 const TABS = [
   { value: "overview", label: "Nội dung" },
@@ -16,10 +17,16 @@ type TabValue = (typeof TABS)[number]["value"];
 interface Props {
   overviewProps: React.ComponentProps<typeof OverviewTab>;
   episodeCount: number;
+  animeId: number;
+  animeSlug: string;
 }
 
-export function DetailTabs({ overviewProps, episodeCount }: Props) {
+export function DetailTabs({ overviewProps, episodeCount, animeId, animeSlug }: Props) {
   const [active, setActive] = useState<TabValue>("overview");
+  
+  // Fetch episodes to get a valid ID for comments
+  const { data: episodesData } = useAnimeEpisodes(animeId, { limit: 1 });
+  const firstEpisodeId = episodesData?.items?.[0]?.id || 0;
 
   return (
     <section className="mt-8 md:mt-0 w-full">
@@ -48,8 +55,14 @@ export function DetailTabs({ overviewProps, episodeCount }: Props) {
       {/* Tab content */}
       <div className="mt-6 animate-in fade-in-50 duration-500">
         {active === "overview" && <OverviewTab {...overviewProps} />}
-        {active === "episodes" && <EpisodesTab episodeCount={episodeCount} />}
-        {active === "comments" && <CommentsTab />}
+        {active === "episodes" && (
+          <EpisodesTab
+            animeId={animeId}
+            animeSlug={animeSlug}
+            totalEpisodeCount={episodeCount}
+          />
+        )}
+        {active === "comments" && <CommentsTab episodeId={firstEpisodeId} />}
       </div>
     </section>
   );

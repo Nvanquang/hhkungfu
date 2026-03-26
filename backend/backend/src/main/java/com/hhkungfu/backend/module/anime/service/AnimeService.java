@@ -16,6 +16,7 @@ import com.hhkungfu.backend.module.anime.mapper.AnimeMapper;
 import com.hhkungfu.backend.module.anime.repository.AnimeRepository;
 import com.hhkungfu.backend.module.anime.repository.GenreRepository;
 import com.hhkungfu.backend.module.anime.repository.StudioRepository;
+import com.hhkungfu.backend.module.anime.repository.projection.AnimeRecentUpdateProjection;
 import com.hhkungfu.backend.module.interaction.service.BookmarkService;
 import com.hhkungfu.backend.common.util.SecurityUtil;
 
@@ -174,10 +175,12 @@ public class AnimeService {
 
         // 2. Query DB
         Anime anime = (idOrSlug.matches("\\d+")) ? animeRepository.findByIdAndDeletedAtIsNull(Long.parseLong(idOrSlug))
-                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME", ErrorConstants.ANIME_NOT_FOUND.getCode()))
+                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME",
+                        ErrorConstants.ANIME_NOT_FOUND.getCode()))
                 : animeRepository.findBySlugAndDeletedAtIsNull(idOrSlug)
                         .orElseThrow(
-                                () -> new ResourceNotFoundException("Anime not found", "ANIME", ErrorConstants.ANIME_NOT_FOUND.getCode()));
+                                () -> new ResourceNotFoundException("Anime not found", "ANIME",
+                                        ErrorConstants.ANIME_NOT_FOUND.getCode()));
 
         AnimeDetailDto dto = animeMapper.toDetailDto(anime);
         populateBookmarkStatus(dto);
@@ -247,8 +250,11 @@ public class AnimeService {
 
     @Transactional(readOnly = true)
     public PageResponse<AnimeSummaryDto> getRecentlyUpdated(Pageable pageable) {
-        Page<Anime> page = animeRepository.findRecentlyUpdated(pageable);
-        List<AnimeSummaryDto> dtos = page.getContent().stream().map(animeMapper::toSummaryDto).toList();
+        Page<AnimeRecentUpdateProjection> page = animeRepository.findRecentlyUpdated(pageable);
+        List<AnimeSummaryDto> dtos = page.getContent().stream().map(p -> {
+            AnimeSummaryDto dto = animeMapper.projectionToSummaryDto(p);
+            return dto;
+        }).toList();
         populateBookmarkStatus(dtos);
         return PageResponse.<AnimeSummaryDto>builder()
                 .items(dtos)
@@ -307,7 +313,8 @@ public class AnimeService {
     @Transactional
     public AnimeDetailDto updateAnime(Long id, UpdateAnimeRequest request) {
         Anime anime = animeRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME", ErrorConstants.ANIME_NOT_FOUND.getCode()));
+                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME",
+                        ErrorConstants.ANIME_NOT_FOUND.getCode()));
 
         if (request.slug() != null && !request.slug().equals(anime.getSlug())) {
             if (animeRepository.existsBySlug(request.slug())) {
@@ -342,7 +349,8 @@ public class AnimeService {
     @Transactional
     public void deleteAnime(Long id) {
         Anime anime = animeRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME", ErrorConstants.ANIME_NOT_FOUND.getCode()));
+                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME",
+                        ErrorConstants.ANIME_NOT_FOUND.getCode()));
 
         anime.setDeletedAt(LocalDateTime.now());
         animeRepository.save(anime);

@@ -26,6 +26,12 @@ spring:
         one-indexed-parameters: true
         size-parameter: limit
 
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5GB
+      max-request-size: 5GB
+
   task:
     execution:
       thread-name-prefix: hhkungfu-task-
@@ -74,3 +80,21 @@ security:
       base64-secret: ${BASE64-SECRET}
       access-token-validity-in-seconds: ${ACCESS-TOKEN-VALIDITY-IN-SECONDS}
       refresh-token-validity-in-seconds: ${REFRESH-TOKEN-VALIDITY-IN-SECONDS}
+
+ffmpeg:
+  path: ${FFMPEG_PATH}
+  ffprobe:
+    path: ${FFPROBE_PATH}
+
+storage:
+  type: ${STORAGE_TYPE:local}
+  local:
+    base-path: ${STORAGE_LOCAL_BASE_PATH}
+    base-url: ${STORAGE_LOCAL_BASE_URL}
+  r2:
+    account-id: ${R2_ACCOUNT_ID}
+    access-key: ${R2_ACCESS_KEY}
+    secret-key: ${R2_SECRET_KEY}
+    bucket: ${R2_BUCKET:hhkungfu}
+    base-url: ${R2_BASE_URL}
+    endpoint: ${R2_ENDPOINT}

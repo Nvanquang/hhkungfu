@@ -23,6 +23,7 @@ public class AnimeSummaryDto {
     private AnimeStatus status;
     private AnimeType type;
     private Integer totalEpisodes;
+    private Integer latestEp;
     private Short year;
     private BigDecimal malScore;
     private Long viewCount;

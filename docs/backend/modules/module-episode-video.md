@@ -19,8 +19,8 @@ CREATE TABLE episodes (
     -- TRUE → chỉ user có subscription ACTIVE mới stream được
     video_status     VARCHAR(20)  NOT NULL DEFAULT 'PENDING'
                          CHECK (video_status IN ('PENDING','PROCESSING','READY','FAILED')),
-    hls_path         VARCHAR(500),     -- VD: hls/ep-101/master.m3u8
-    hls_base_url     VARCHAR(500),     -- URL public đầy đủ để HLS.js dùng
+    hls_path         VARCHAR(500),     -- VD: ep-101/master.m3u8
+    hls_base_url     VARCHAR(500),     -- URL public đầy đủ để HLS.js (VD: http://localhost:8080/api/v1/files/hls/101/master.m3u8)
     duration_seconds INTEGER,
     file_size_bytes  BIGINT,
     has_vietsub      BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -41,7 +41,7 @@ CREATE INDEX idx_episodes_vip      ON episodes (is_vip_only) WHERE deleted_at IS
 CREATE TABLE video_files (
     id         BIGSERIAL    PRIMARY KEY,
     episode_id BIGINT       NOT NULL REFERENCES episodes(id) ON DELETE CASCADE,
-    quality    VARCHAR(10)  NOT NULL CHECK (quality IN ('360p','720p','1080p')),
+    quality    VARCHAR(10)  NOT NULL CHECK (quality IN ('360p','720p')),
     file_path  VARCHAR(500) NOT NULL,   -- Path trên R2/local storage
     file_type  VARCHAR(10)  NOT NULL CHECK (file_type IN ('PLAYLIST','SEGMENT')),
     file_name  VARCHAR(255) NOT NULL,
@@ -91,6 +91,230 @@ CREATE INDEX idx_subtitles_episode ON subtitles (episode_id);
 | `viewcount:ep:{id}` | Không hết | Counter lượt xem realtime |
 | `transcode:progress:{jobId}` | 3600s | Cache tiến trình transcode |
 
+---
+
+## 2. Storage Configuration
+
+### Tổng quan
+Hệ thống hỗ trợ 2 storage backend thông qua Spring Profiles:
+
+| Profile | Storage | Dùng khi |
+|---|---|---|
+| `local` | Disk máy local | Dev / chạy đồ án |
+| `prod` | Cloudflare R2 | Deploy thật |
+
+Chuyển đổi bằng cách thay `spring.profiles.active` trong `application.properties` — **không cần đổi bất kỳ code nào khác**.
+
+---
+
+### application.properties (chung)
+```properties
+spring.profiles.active=local
+```
+
+---
+
+### application-local.properties
+```properties
+# ===============================
+# Storage: Local disk
+# ===============================
+# Thư mục lưu HLS files trên máy (không bao gồm tiền tố hls/)
+storage.local.base-path=E:/data/hls
+
+# URL base để truy cập HLS qua API
+storage.local.base-url=http://localhost:8080/api/v1/files/hls
+
+# Path tới FFmpeg (nếu không có trong PATH hệ thống)
+ffmpeg.path=C:/ffmpeg/bin/ffmpeg.exe
+ffprobe.path=C:/ffmpeg/bin/ffprobe.exe
+```
+
+Cấu trúc thư mục trên máy:
+```
+E:\data\hls\
+└── ep-101\
+    ├── master.m3u8
+    ├── 360p\
+    │   ├── index.m3u8
+    │   ├── seg001.ts
+    │   └── ...
+    └── 720p\
+        ├── index.m3u8
+        ├── seg001.ts
+        └── ...
+```
+
+---
+
+### application-prod.properties
+```properties
+# ===============================
+# Storage: Cloudflare R2
+# ===============================
+storage.r2.account-id=your_account_id
+storage.r2.access-key=your_access_key_id
+storage.r2.secret-key=your_secret_access_key
+storage.r2.bucket=hhkungfu
+storage.r2.base-url=https://pub-xxx.r2.dev
+# Endpoint R2 theo format: https://{account_id}.r2.cloudflarestorage.com
+storage.r2.endpoint=https://your_account_id.r2.cloudflarestorage.com
+```
+
+> **Lấy credentials R2:**
+> Cloudflare Dashboard → R2 → Manage R2 API Tokens → Create API Token
+
+---
+
+### StorageService Interface
+```java
+public interface StorageService {
+    void uploadDirectory(String sourceDir, String destinationKey) throws IOException;
+    void deleteDirectory(String destinationKey) throws IOException;
+    String getBaseUrl();
+}
+```
+
+---
+
+### LocalStorageService — profile `local`
+```java
+@Service
+@Profile("local")
+public class LocalStorageService implements StorageService {
+
+    @Value("${storage.local.base-path:/data/hls}")
+    private String basePath;
+
+    @Value("${storage.local.base-url:http://localhost:8080/api/v1/files/hls}")
+    private String baseUrl;
+
+    @Override
+    public void uploadDirectory(String sourceDir, String destinationKey) throws IOException {
+        Path source = Path.of(sourceDir);
+        Path destination = Path.of(basePath, destinationKey);
+        Files.createDirectories(destination);
+
+        Files.walk(source).forEach(src -> {
+            try {
+                Path dest = destination.resolve(source.relativize(src));
+                if (Files.isDirectory(src)) Files.createDirectories(dest);
+                else Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Override
+    public void deleteDirectory(String destinationKey) throws IOException {
+        Path target = Path.of(basePath, destinationKey);
+        if (Files.exists(target)) {
+            Files.walk(target)
+                .sorted(Comparator.reverseOrder())
+                .forEach(p -> {
+                    try { Files.delete(p); }
+                    catch (IOException e) { throw new RuntimeException(e); }
+                });
+        }
+    }
+
+    @Override
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+}
+```
+
+---
+
+### R2StorageService — profile `prod`
+```java
+@Service
+@Profile("prod")
+public class R2StorageService implements StorageService {
+
+    @Value("${storage.r2.endpoint}")
+    private String endpoint;
+
+    @Value("${storage.r2.access-key}")
+    private String accessKey;
+
+    @Value("${storage.r2.secret-key}")
+    private String secretKey;
+
+    @Value("${storage.r2.bucket}")
+    private String bucket;
+
+    @Value("${storage.r2.base-url}")
+    private String baseUrl;
+
+    private S3Client s3Client;
+
+    @PostConstruct
+    public void init() {
+        this.s3Client = S3Client.builder()
+            .endpointOverride(URI.create(endpoint))
+            .credentialsProvider(StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(accessKey, secretKey)))
+            .region(Region.of("auto"))
+            .build();
+    }
+
+    @Override
+    public void uploadDirectory(String sourceDir, String destinationKey) throws IOException {
+        Path source = Path.of(sourceDir);
+
+        Files.walk(source)
+            .filter(Files::isRegularFile)
+            .forEach(file -> {
+                String key = destinationKey + "/"
+                    + source.relativize(file).toString().replace("\\", "/");
+                s3Client.putObject(
+                    PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(key)
+                        .contentType(detectContentType(file.getFileName().toString()))
+                        .build(),
+                    file
+                );
+            });
+    }
+
+    @Override
+    public void deleteDirectory(String destinationKey) {
+        ListObjectsV2Response list = s3Client.listObjectsV2(
+            ListObjectsV2Request.builder().bucket(bucket).prefix(destinationKey + "/").build()
+        );
+
+        list.contents().forEach(obj ->
+            s3Client.deleteObject(
+                DeleteObjectRequest.builder().bucket(bucket).key(obj.key()).build()
+            )
+        );
+    }
+
+    @Override
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    private String detectContentType(String fileName) {
+        if (fileName.endsWith(".m3u8")) return "application/vnd.apple.mpegurl";
+        if (fileName.endsWith(".ts"))   return "video/mp2t";
+        return "application/octet-stream";
+    }
+}
+```
+
+> **Maven dependency cần thêm:**
+> ```xml
+> <dependency>
+>     <groupId>software.amazon.awssdk</groupId>
+>     <artifactId>s3</artifactId>
+>     <version>2.25.0</version>
+> </dependency>
+> ```
 
 ---
 
@@ -153,9 +377,8 @@ CREATE INDEX idx_subtitles_episode ON subtitles (episode_id);
     "episodeId": 101, "videoStatus": "READY",
     "masterUrl": "https://cdn.example.com/hls/ep-101/master.m3u8",
     "qualities": [
-      { "quality": "360p",  "url": "https://.../ep-101/360p/index.m3u8" },
-      { "quality": "720p",  "url": "https://.../ep-101/720p/index.m3u8" },
-      { "quality": "1080p", "url": "https://.../ep-101/1080p/index.m3u8" }
+      { "quality": "360p", "url": "https://.../ep-101/360p/index.m3u8" },
+      { "quality": "720p", "url": "https://.../ep-101/720p/index.m3u8" }
     ],
     "subtitles": [
       { "language": "vi", "label": "Vietsub", "url": "https://.../ep-101.vi.vtt" }
@@ -188,11 +411,11 @@ ZINCRBY Redis anime:trending {animeId} 1
 **Request:**
 ```jsonc
 {
-  "episodeNumber": 1,             // required | unique trong anime
+  "episodeNumber": 1,
   "title": "Ryomen Sukuna",
   "description": "...",
   "thumbnailUrl": "https://...",
-  "isVipOnly": false,             // default false
+  "isVipOnly": false,
   "hasVietsub": true,
   "hasEngsub": false,
   "airedDate": "2020-10-03"
@@ -230,7 +453,7 @@ ZINCRBY Redis anime:trending {animeId} 1
 | Field | Bắt buộc | Mô tả |
 |---|---|---|
 | `file` | ✅ | MP4/MKV/AVI, max 2GB |
-| `qualities` | | Comma-separated: `360p,720p,1080p` — default: tất cả |
+| `qualities` | | Comma-separated: `360p,720p` — default: tất cả |
 
 **Flow:**
 ```
@@ -247,8 +470,10 @@ ZINCRBY Redis anime:trending {animeId} 1
 ```jsonc
 {
   "success": true,
-  "data": { "episodeId": 101, "jobId": 55, "status": "QUEUED",
-            "message": "Video đã được tiếp nhận, đang xếp hàng transcode" }
+  "data": {
+    "episodeId": 101, "jobId": 55, "status": "QUEUED",
+    "message": "Video đã được tiếp nhận, đang xếp hàng transcode"
+  }
 }
 ```
 
@@ -287,7 +512,7 @@ public SseEmitter streamProgress(@PathVariable Long jobId) {
 **SSE Events:**
 ```
 event: progress
-data: { "jobId": 55, "status": "RUNNING", "progress": 33, "currentStep": "Encoding 360p..." }
+data: { "jobId": 55, "status": "RUNNING", "progress": 50, "currentStep": "Encoding 720p..." }
 
 event: done
 data: { "jobId": 55, "status": "DONE", "progress": 100, "masterUrl": "https://.../master.m3u8" }
@@ -355,9 +580,7 @@ data: { "jobId": 55, "status": "FAILED", "error": "FFmpeg error: Invalid codec" 
 
 **Logic:**
 ```java
-// Đọc Range header
 String range = request.getHeader("Range"); // "bytes=0-1048575"
-// Serve partial content
 response.setStatus(206);
 response.setHeader("Content-Range", "bytes 0-1048575/10485760");
 response.setHeader("Accept-Ranges", "bytes");
@@ -389,50 +612,43 @@ public void runTranscode(Long jobId) {
         job.setCurrentStep("Encoding 360p...");
         save(job);
         runFfmpeg(inputPath, outputDir + "/360p", 640, 360, "800k");
-        job.setProgress(33);
+        job.setProgress(50);
         save(job);
 
         // 3. Encode 720p
         job.setCurrentStep("Encoding 720p...");
         save(job);
         runFfmpeg(inputPath, outputDir + "/720p", 1280, 720, "2500k");
-        job.setProgress(66);
+        job.setProgress(90);
         save(job);
 
-        // 4. Encode 1080p
-        job.setCurrentStep("Encoding 1080p...");
-        save(job);
-        runFfmpeg(inputPath, outputDir + "/1080p", 1920, 1080, "5000k");
-        job.setProgress(99);
-        save(job);
-
-        // 5. Tạo master.m3u8
+        // 4. Tạo master.m3u8
         createMasterPlaylist(outputDir);
 
-        // 6. Upload lên Cloudflare R2 (hoặc giữ local)
-        storageService.uploadDirectory(outputDir, "hls/ep-" + job.getEpisodeId());
+        // 5. Upload lên storage (local disk hoặc R2 tùy profile)
+        storageService.uploadDirectory(outputDir, "ep-" + job.getEpisodeId());
 
-        // 7. Ghi video_files vào DB
-        saveVideoFiles(job.getEpisodeId(), outputDir);
+        // 6. Ghi video_files vào DB
+        saveVideoFiles(job.getEpisodeId(), outputDir, "ep-" + job.getEpisodeId());
 
-        // 8. Update episode
+        // 7. Update episode
         episodeRepository.updateVideoReady(
             job.getEpisodeId(),
-            "hls/ep-" + job.getEpisodeId() + "/master.m3u8",
-            buildHlsBaseUrl(job.getEpisodeId())
+            "ep-" + job.getEpisodeId() + "/master.m3u8",
+            storageService.getBaseUrl() + "/" + job.getEpisodeId() + "/master.m3u8"
         );
 
-        // 9. Done
+        // 8. Done
         job.setStatus(DONE);
         job.setProgress(100);
         job.setCurrentStep("Completed");
         job.setCompletedAt(LocalDateTime.now());
         save(job);
 
-        // 10. Xóa file gốc
+        // 9. Xóa file gốc
         Files.deleteIfExists(Path.of(inputPath));
 
-        // 11. Invalidate cache
+        // 10. Invalidate cache
         redisService.delete("episode:" + job.getEpisodeId());
         redisService.delete("episode:" + job.getEpisodeId() + ":stream");
 
@@ -446,7 +662,21 @@ public void runTranscode(Long jobId) {
 }
 ```
 
-### FFmpeg Command
+### FFmpeg Commands
+
+**360p:**
+```bash
+ffmpeg -i input.mp4 \
+  -vf "scale=640:360" \
+  -c:v libx264 -b:v 800k \
+  -c:a aac -b:a 128k \
+  -hls_time 10 \
+  -hls_list_size 0 \
+  -hls_segment_filename "output/360p/segment_%03d.ts" \
+  output/360p/index.m3u8
+```
+
+**720p:**
 ```bash
 ffmpeg -i input.mp4 \
   -vf "scale=1280:720" \
@@ -465,8 +695,6 @@ ffmpeg -i input.mp4 \
 360p/index.m3u8
 #EXT-X-STREAM-INF:BANDWIDTH=2500000,RESOLUTION=1280x720
 720p/index.m3u8
-#EXT-X-STREAM-INF:BANDWIDTH=5000000,RESOLUTION=1920x1080
-1080p/index.m3u8
 ```
 
 ---
@@ -486,7 +714,6 @@ public StreamInfoDto getStreamInfo(Long episodeId, UUID userId) {
         if (userId == null)
             throw new BusinessException("VIP required", "EPISODE", ErrorConstants.VIP_REQUIRED.getCode());
 
-        // Check cache Redis trước
         Boolean cachedVip = redisService.get("vip:status:" + userId, Boolean.class);
         if (cachedVip == null) {
             boolean isVip = subscriptionRepository.isVipActive(userId, LocalDateTime.now());
@@ -497,7 +724,6 @@ public StreamInfoDto getStreamInfo(Long episodeId, UUID userId) {
             throw new BusinessException("VIP required", "EPISODE", ErrorConstants.VIP_REQUIRED.getCode());
     }
 
-    // Increment view count
     redisService.increment("viewcount:ep:" + episodeId);
     redisService.zincrby("anime:trending", ep.getAnimeId(), 1);
 

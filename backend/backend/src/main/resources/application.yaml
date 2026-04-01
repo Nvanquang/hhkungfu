@@ -1,7 +1,7 @@
 spring:
   application:
     name: hhkungfu
-    client-app-url: http://localhost:5173
+    client-app-url: ${CLIENT_APP_URL}
 
   datasource:
     url: ${DB_URL}
@@ -12,10 +12,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
 
   data:
     redis:
@@ -98,3 +94,18 @@ storage:
     bucket: ${R2_BUCKET:hhkungfu}
     base-url: ${R2_BASE_URL}
     endpoint: ${R2_ENDPOINT}
+
+payment:
+  vnpay:
+    tmn-code: ${TMN-CODE}
+    hash-secret: ${VNPAY_SECRET_KEY}
+    payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+    return-url: ${spring.application.client-app-url}/vip/result
+    ipn-url: ${BACKEND_BASE_URL:http://localhost:8080}/api/v1/payments/callback/vnpay/ipn
+  momo:
+    partner-code: ${MOMO_PARTNER_CODE}
+    access-key: ${MOMO_ACCESS_KEY}
+    secret-key: ${MOMO_SECRET_KEY}
+    api-url: https://test-payment.momo.vn/v2/gateway/api/create
+    redirect-url: ${spring.application.client-app-url}/vip/result
+    ipn-url: ${BACKEND_BASE_URL:http://localhost:8080}/api/v1/payments/callback/momo/ipn

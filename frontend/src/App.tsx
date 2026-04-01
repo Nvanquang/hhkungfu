@@ -24,9 +24,15 @@ const Watch = lazy(() => import("@/pages/Watch"));
 // User module pages
 const Profile = lazy(() => import("@/pages/Profile"));
 const History = lazy(() => import("@/pages/History"));
+const PaymentHistory = lazy(() => import("@/pages/PaymentHistory"));
 const Bookmarks = lazy(() => import("@/pages/Bookmarks"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const VerifyPasswordChange = lazy(() => import("@/pages/Settings/VerifyPasswordChange"));
+
+// VIP
+const VipPlans = lazy(() => import("@/pages/Vip/VipPlans"));
+const VipCheckout = lazy(() => import("@/pages/Vip/VipCheckout"));
+const PaymentResult = lazy(() => import("@/pages/Vip/PaymentResult"));
 
 // App wrapper to use hooks correctly within the context (though useAuthStore can be anywhere, it's fine inside App)
 function AppContent() {
@@ -51,11 +57,16 @@ function AppContent() {
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<div className="p-8">Protected Dashboard</div>} />
               <Route path="/me/history" element={<History />} />
+              <Route path="/me/payments" element={<PaymentHistory />} />
               <Route path="/me/bookmarks" element={<Bookmarks />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/settings/verify-password" element={<VerifyPasswordChange />} />
-              <Route path="/vip" element={<div className="p-8">VIP</div>} />
+              <Route path="/vip/checkout" element={<VipCheckout />} />
             </Route>
+
+            {/* Public VIP Pages */}
+            <Route path="/vip" element={<VipPlans />} />
+            <Route path="/vip/result" element={<PaymentResult />} />
           </Route>
 
           {/* Auth Pages without MainLayout */}

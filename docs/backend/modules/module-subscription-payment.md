@@ -1,5 +1,6 @@
 # Module: Subscription & Payment
-**Package:** `com.hhkungfu.subscription`
+
+**Package:** `com.hhkungfu.backend.module.subscription`
 **Phụ trách:** Gói VIP, mua gói, thanh toán VNPay/MoMo, callback, kiểm tra VIP, job hết hạn
 
 ---
@@ -10,12 +11,12 @@
 ```sql
 CREATE TABLE subscription_plans (
     id             BIGSERIAL     PRIMARY KEY,
-    name           VARCHAR(100)  NOT NULL,         -- 'VIP 1 Tháng', 'VIP 1 Năm'
-    duration_days  INTEGER       NOT NULL,          -- 30, 90, 365
-    price          DECIMAL(12,0) NOT NULL,          -- VND
-    original_price DECIMAL(12,0),                  -- Giá gốc (để hiện % tiết kiệm), NULL nếu không giảm
+    name           VARCHAR(100)  NOT NULL,
+    duration_days  INTEGER       NOT NULL,
+    price          DECIMAL(12,0) NOT NULL,
+    original_price DECIMAL(12,0),
     description    TEXT,
-    features       TEXT[],                          -- ['Xem 1080p', 'Không quảng cáo', ...]
+    features       TEXT[],
     is_active      BOOLEAN       NOT NULL DEFAULT TRUE,
     sort_order     SMALLINT      NOT NULL DEFAULT 0,
     created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
@@ -31,11 +32,11 @@ CREATE TABLE user_subscriptions (
     plan_id          BIGINT        NOT NULL REFERENCES subscription_plans(id),
     status           VARCHAR(20)   NOT NULL DEFAULT 'PENDING'
                          CHECK (status IN ('PENDING','ACTIVE','EXPIRED','CANCELLED')),
-    started_at       TIMESTAMPTZ,              -- Set khi payment PAID
-    expires_at       TIMESTAMPTZ,              -- started_at + duration_days
-    paid_price       DECIMAL(12,0),            -- Snapshot giá tại thời điểm mua
-    duration_days    INTEGER,                   -- Snapshot duration
-    previous_sub_id  BIGINT REFERENCES user_subscriptions(id),  -- Trỏ sub trước nếu gia hạn
+    started_at       TIMESTAMPTZ,
+    expires_at       TIMESTAMPTZ,
+    paid_price       DECIMAL(12,0),
+    duration_days    INTEGER,
+    previous_sub_id  BIGINT REFERENCES user_subscriptions(id),
     created_at       TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 CREATE INDEX idx_sub_user_id ON user_subscriptions (user_id);
@@ -55,14 +56,14 @@ CREATE TABLE payments (
     currency               VARCHAR(3)    NOT NULL DEFAULT 'VND',
     status                 VARCHAR(20)   NOT NULL DEFAULT 'PENDING'
                                CHECK (status IN ('PENDING','PAID','FAILED','REFUNDED','EXPIRED')),
-    order_code             VARCHAR(50)   NOT NULL UNIQUE,
-    -- Format: ORD-{yyyyMMddHHmmss}-{random6}
+    order_code             VARCHAR(100)  NOT NULL UNIQUE,
+    -- Format: ORD{timestamp}{random4upcase} — only [a-zA-Z0-9], max 100 chars (VNPay requirement)
     order_info             VARCHAR(255),
     gateway_transaction_id VARCHAR(100),
     gateway_response_code  VARCHAR(10),
-    gateway_response_data  JSONB,                -- Toàn bộ callback payload
+    gateway_response_data  JSONB,
     paid_at                TIMESTAMPTZ,
-    expired_at             TIMESTAMPTZ,          -- Phiên thanh toán hết hạn sau 15 phút
+    expired_at             TIMESTAMPTZ,
     created_at             TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 CREATE INDEX idx_payments_sub        ON payments (subscription_id);
@@ -75,41 +76,31 @@ CREATE INDEX idx_payments_status     ON payments (status);
 | Key | TTL | Mô tả |
 |---|---|---|
 | `vip:status:{userId}` | 300s | Cache trạng thái VIP (5 phút) |
-| `sub:plans` | 3600s | Cache danh sách gói |
+
+> **Lưu ý:** Cache `sub:plans` chưa được implement — `getPlans()` hiện truy vấn DB trực tiếp mỗi request.
 
 ---
 
-## 2. Package Structure
+## 2. Cấu hình (`application.yaml`)
 
+```yaml
+payment:
+  vnpay:
+    tmn-code: YOUR_TMN_CODE
+    hash-secret: YOUR_HASH_SECRET
+    payment-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+    return-url: http://localhost:8080/api/v1/payments/callback/vnpay/return
+    ipn-url: http://localhost:8080/api/v1/payments/callback/vnpay/ipn
+  momo:
+    partner-code: YOUR_PARTNER_CODE
+    access-key: YOUR_ACCESS_KEY
+    secret-key: YOUR_SECRET_KEY
+    api-url: https://test-payment.momo.vn/v2/gateway/api/create
+    redirect-url: http://localhost:3000/payment/result
+    ipn-url: http://localhost:8080/api/v1/payments/callback/momo/ipn
 ```
-com.hhkungfu.subscription/
-├── controller/
-│   ├── SubscriptionController.java  -- GET /subscriptions/plans, POST /subscriptions/initiate
-│   ├── PaymentCallbackController.java -- GET /payments/callback/vnpay, /momo
-│   └── SubscriptionAdminController.java -- Admin: manage plans
-├── service/
-│   ├── SubscriptionService.java     -- initiate, activate, check vip
-│   ├── VNPayService.java            -- tạo payment URL, verify callback
-│   ├── MoMoService.java             -- tạo payment URL, verify callback
-│   └── SubscriptionJobService.java  -- @Scheduled expire jobs
-├── dto/
-│   ├── request/
-│   │   ├── InitiatePaymentRequest.java  -- { planId, gateway }
-│   │   └── PlanCreateRequest.java
-│   └── response/
-│       ├── SubscriptionPlanDto.java
-│       ├── UserSubscriptionDto.java
-│       ├── PaymentInitiateResponse.java -- { paymentUrl, orderId }
-│       └── PaymentResultDto.java
-├── entity/
-│   ├── SubscriptionPlan.java
-│   ├── UserSubscription.java
-│   └── Payment.java
-└── repository/
-    ├── SubscriptionPlanRepository.java
-    ├── UserSubscriptionRepository.java
-    └── PaymentRepository.java
-```
+
+Mapping được bind qua `PaymentProperties.java` (`@ConfigurationProperties(prefix = "payment")`).
 
 ---
 
@@ -118,37 +109,21 @@ com.hhkungfu.subscription/
 ### GET `/api/v1/subscriptions/plans`
 **Auth:** Không cần
 
-**Logic:** Cache Redis `sub:plans` TTL 1 giờ. Tính % tiết kiệm từ `original_price`.
+**Logic:** Trả về danh sách gói đang active, sắp xếp theo `sortOrder` tăng dần.
 
 **Response `200`:**
 ```jsonc
 {
   "success": true,
-  "data": {
-    "items": [
-      {
-        "id": 1, "name": "VIP 1 Tháng", "durationDays": 30,
-        "price": 59000, "originalPrice": null, "savingPercent": null,
-        "description": "Trải nghiệm VIP trong 1 tháng",
-        "features": ["Xem tất cả anime VIP-only", "Chất lượng 1080p", "Không quảng cáo"],
-        "isActive": true, "sortOrder": 1
-      },
-      {
-        "id": 2, "name": "VIP 3 Tháng", "durationDays": 90,
-        "price": 149000, "originalPrice": 177000, "savingPercent": 16,
-        "description": "Tiết kiệm 16%",
-        "features": ["Xem tất cả anime VIP-only", "Chất lượng 1080p", "Không quảng cáo", "Ưu tiên hỗ trợ"],
-        "isActive": true, "sortOrder": 2
-      },
-      {
-        "id": 3, "name": "VIP 1 Năm", "durationDays": 365,
-        "price": 499000, "originalPrice": 708000, "savingPercent": 30,
-        "description": "Lựa chọn tốt nhất",
-        "features": ["Xem tất cả anime VIP-only", "Chất lượng 1080p", "Không quảng cáo", "Ưu tiên hỗ trợ", "Badge VIP đặc biệt"],
-        "isActive": true, "sortOrder": 3
-      }
-    ]
-  }
+  "data": [
+    {
+      "id": 1, "name": "VIP 1 Tháng", "durationDays": 30,
+      "price": 59000, "originalPrice": null,
+      "description": "Trải nghiệm VIP trong 1 tháng",
+      "features": ["Xem tất cả anime VIP-only", "Chất lượng 1080p", "Không quảng cáo"],
+      "isActive": true, "sortOrder": 1
+    }
+  ]
 }
 ```
 
@@ -157,22 +132,20 @@ com.hhkungfu.subscription/
 ### GET `/api/v1/subscriptions/me`
 **Auth:** Cần đăng nhập
 
+**Logic:** Tìm subscription `ACTIVE` mới nhất của user (theo `expiresAt DESC`). Trả `null` nếu không có.
+
 **Response `200`:**
 ```jsonc
 {
   "success": true,
   "data": {
-    "isVip": true,
-    "currentSubscription": {
-      "id": 12, "planName": "VIP 3 Tháng",
-      "status": "ACTIVE",
-      "startedAt": "2026-03-01T00:00:00Z",
-      "expiresAt": "2026-05-30T00:00:00Z",
-      "daysRemaining": 78
-    }
+    "id": 12, "planName": "VIP 3 Tháng",
+    "status": "ACTIVE",
+    "startedAt": "2026-03-01T00:00:00Z",
+    "expiresAt": "2026-05-30T00:00:00Z"
   }
 }
-// Nếu không có subscription: { "isVip": false, "currentSubscription": null }
+// Nếu không có VIP: { "success": true, "data": null }
 ```
 
 ---
@@ -187,14 +160,15 @@ com.hhkungfu.subscription/
 
 **Flow:**
 ```
-1. Validate planId tồn tại + is_active = TRUE
-2. Kiểm tra email_verified = TRUE → EMAIL_NOT_VERIFIED 403
-3. Lấy subscription ACTIVE hiện tại (nếu có) để xác định expires_at gia hạn
-4. INSERT user_subscriptions { status: PENDING, plan snapshot, previous_sub_id }
-5. Sinh order_code: "ORD-20260313143000-X7K2M9"
-6. INSERT payments { status: PENDING, order_code, expired_at: NOW()+15m }
-7. Gọi VNPayService/MoMoService.createPaymentUrl(payment, plan)
-8. Trả về paymentUrl + orderId
+1. Validate user tồn tại + emailVerified = true
+2. Validate planId tồn tại + isActive = true
+3. Kiểm tra nếu đã có PENDING payment cho plan này → lỗi PENDING_PAYMENT_EXISTS
+4. Lấy subscription ACTIVE hiện tại (nếu có) → lưu vào previousSubscriptionId
+5. INSERT user_subscriptions { status: PENDING, plan snapshot, previousSubscriptionId }
+6. Sinh orderCode: "ORD" + System.currentTimeMillis() + random4 → strip ký tự non-alphanumeric
+7. INSERT payments { status: PENDING, orderCode, expiredAt: NOW()+15m }
+8. Gọi VNPayService/MoMoService.createPaymentUrl(orderCode, amount, orderInfo)
+9. Trả về paymentUrl + orderId + expiresIn=900
 ```
 
 **Response `200`:**
@@ -202,70 +176,72 @@ com.hhkungfu.subscription/
 {
   "success": true,
   "data": {
-    "paymentUrl": "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=...",
-    "orderId": "ORD-20260313143000-X7K2M9",
+    "paymentUrl": "https://sandbox.vnpayment.vn/paymentv2/...",
+    "orderId": "ORD1742900400000X7K2",
     "expiresIn": 900
   }
 }
 ```
 
-**Errors:** `PLAN_NOT_FOUND` 404 | `PLAN_NOT_ACTIVE` 400 | `EMAIL_NOT_VERIFIED` 403
+**Errors:**
+| Code | HTTP | Mô tả |
+|---|---|---|
+| `EMAIL_NOT_VERIFIED` | 400 | Email chưa xác thực |
+| `PLAN_NOT_FOUND` | 404 | Gói không tồn tại |
+| `PLAN_NOT_ACTIVE` | 400 | Gói đang bị ẩn |
+| `PENDING_PAYMENT_EXISTS` | 400 | Đã có giao dịch PENDING cho gói này |
+| `UNSUPPORTED_GATEWAY` | 400 | Gateway không hợp lệ |
 
 ---
 
-### GET `/api/v1/payments/callback/vnpay`
-**Auth:** Không cần (gọi từ VNPay server)
+### GET `/api/v1/payments/callback/vnpay/ipn`
+**Auth:** Không cần (gọi từ VNPay server — Server-to-Server)
 
 **Query Params (từ VNPay):**
 ```
-vnp_TxnRef=ORD-xxx
-vnp_ResponseCode=00
-vnp_TransactionNo=14242368
-vnp_Amount=14900000   (x100 vì VNPay nhân 100)
-vnp_SecureHash=abc123...
-... (nhiều params khác)
+vnp_TxnRef, vnp_ResponseCode, vnp_TransactionNo, vnp_Amount (x100), vnp_SecureHash, ...
 ```
 
 **Flow:**
 ```
-1. ⚠️ BẮT BUỘC: Verify chữ ký vnp_SecureHash với HMAC-SHA512
-   → Nếu sai chữ ký → log cảnh báo, trả về RspCode=97, không xử lý tiếp
-
-2. Tìm payment theo order_code = vnp_TxnRef
-
-3. Idempotency: nếu payment.status đã là PAID → trả về RspCode=00 luôn (không xử lý lại)
-
-4. Nếu vnp_ResponseCode = '00' (thành công):
-   a. UPDATE payments: status=PAID, paid_at=NOW(),
-      gateway_transaction_id=vnp_TransactionNo,
-      gateway_response_code='00',
-      gateway_response_data={toàn bộ params dạng JSON}
-   b. Tính expires_at:
-      - Nếu user có subscription ACTIVE → expires_at = sub_hiện_tại.expires_at + duration_days
-      - Ngược lại → expires_at = NOW() + duration_days
-   c. UPDATE user_subscriptions: status=ACTIVE, started_at=NOW(), expires_at=tính ở trên
-   d. DEL Redis vip:status:{userId}  ← xóa cache VIP
-
-5. Nếu vnp_ResponseCode != '00':
-   a. UPDATE payments: status=FAILED, gateway_response_code=code
-   b. UPDATE user_subscriptions: status=CANCELLED
-
-6. Redirect về FE:
-   - Thành công: https://hhkungfu.vercel.app/payment/result?status=success&orderId=ORD-xxx
-   - Thất bại:   https://hhkungfu.vercel.app/payment/result?status=failed&orderId=ORD-xxx
+1. Verify chữ ký vnp_SecureHash với HMAC-SHA512 → lỗi INVALID_SIGNATURE nếu sai
+2. Tìm payment theo orderCode = vnp_TxnRef (SELECT FOR UPDATE — pessimistic lock)
+3. Idempotency: nếu payment.status == PAID → return luôn (không xử lý lại)
+4. Kiểm tra amount: vnp_Amount / 100 phải == payment.amount → lỗi nếu sai
+5. Nếu vnp_ResponseCode == "00":
+   a. UPDATE payments: status=PAID, paidAt, gatewayTransactionId, responseData
+   b. Tính expiresAt:
+      - Nếu previousSubscriptionId != null VÀ sub đó còn ACTIVE → expiresAt = prevSub.expiresAt + durationDays
+      - Ngược lại (không có sub trước hoặc sub đã EXPIRED) → expiresAt = NOW() + durationDays
+   c. UPDATE user_subscriptions: status=ACTIVE, startedAt=NOW(), expiresAt
+   d. DEL Redis vip:status:{userId}
+6. Nếu responseCode != "00": payments → FAILED, user_subscriptions → CANCELLED
+7. Trả về { "RspCode": "00", "Message": "Confirm Success" }
 ```
 
-> **Lưu ý:** VNPay trả về `vnp_Amount` đã nhân 100 (ví dụ 149.000đ → 14900000). Cần chia 100 khi so sánh.
+> **Lưu ý:** VNPay nhân 100 khi gửi amount (149.000đ → 14900000). Code đã chia 100 tại `processVNPayIPN`.
 
 ---
 
-### GET `/api/v1/payments/callback/momo`
-**Auth:** Không cần (gọi từ MoMo server)
+### GET `/api/v1/payments/callback/vnpay/return`
+**Auth:** Không cần (browser redirect từ VNPay)
 
-**Body (từ MoMo — POST thực ra, nhưng MoMo cũng hỗ trợ GET redirect):**
+**Mô tả:** Chỉ đọc `vnp_TxnRef` và `vnp_ResponseCode` từ params, **không** gọi `PaymentService`. Redirect thẳng về frontend:
+```
+{returnUrl}?orderId={vnp_TxnRef}&status=success|failed
+```
+
+> **Lưu ý:** `vnp_ResponseCode == "00"` là thành công. IPN mới là nơi xử lý thực sự.
+
+---
+
+### POST `/api/v1/payments/callback/momo/ipn`
+**Auth:** Không cần (gọi từ MoMo server — Server-to-Server)
+
+**Body (JSON từ MoMo):**
 ```jsonc
 {
-  "orderId": "ORD-xxx",
+  "orderId": "ORD1742900400000X7K2",
   "resultCode": 0,
   "transId": "2810459573",
   "amount": 149000,
@@ -276,195 +252,129 @@ vnp_SecureHash=abc123...
 
 **Flow:**
 ```
-1. Verify chữ ký HMAC-SHA256 với MoMo secret key
-2. Tìm payment theo orderId
+1. Verify chữ ký HMAC-SHA256 → lỗi INVALID_SIGNATURE nếu sai
+2. Tìm payment theo orderId (SELECT FOR UPDATE)
 3. Idempotency check
-4. Nếu resultCode = 0 (thành công): kích hoạt subscription (giống VNPay flow)
-5. Nếu resultCode != 0: cancel
-6. Redirect về FE
+4. Kiểm tra amount khớp payment.amount
+5. Nếu resultCode == "0": kích hoạt subscription (flow giống VNPay)
+6. Nếu resultCode != "0": FAILED + CANCELLED
+7. Trả về HTTP 204
 ```
 
 ---
 
-### GET `/api/v1/payments/result/:orderId`
-**Auth:** Cần đăng nhập
+### GET `/api/v1/payments/callback/momo/return`
+**Auth:** Không cần (browser redirect từ MoMo)
 
-**Mô tả:** FE polling sau khi redirect từ gateway để lấy kết quả thanh toán.
+**Mô tả:** Chỉ đọc `orderId` và `resultCode`, **không** gọi `PaymentService`. Redirect về frontend:
+```
+{redirectUrl}?orderId={orderId}&status=success|failed
+```
+
+---
+
+### GET `/api/v1/payments/result`
+**Auth:** Cần đăng nhập | **Query:** `?orderCode=xxx`
+
+**Mô tả:** Frontend polling sau khi redirect về để lấy kết quả thanh toán.
 
 **Response `200`:**
 ```jsonc
 {
   "success": true,
   "data": {
-    "orderId": "ORD-xxx",
-    "status": "PAID",                    // PENDING | PAID | FAILED | EXPIRED
+    "orderId": "ORD1742900400000X7K2",
+    "status": "PAID",
     "planName": "VIP 3 Tháng",
     "amount": 149000,
-    "paidAt": "2026-03-13T14:32:00Z",
-    "expiresAt": "2026-06-11T14:32:00Z"  // null nếu chưa paid
+    "paidAt": "2026-03-26T14:32:00Z",
+    "expiresAt": "2026-06-24T14:32:00Z"
   }
 }
 ```
 
 ---
 
-### GET `/api/v1/subscriptions/history`
-**Auth:** Cần đăng nhập | **Query Params:** `page`, `limit`
-
-**Response `200`:** Danh sách subscription + payment status, mới nhất trước
-
----
-
-### POST `/api/v1/admin/subscriptions/plans` *(Admin)*
-**Auth:** ADMIN | **Request:** Tất cả fields của subscription_plans
-
-**Response `201`:** SubscriptionPlanDto
-
----
-
-### PUT `/api/v1/admin/subscriptions/plans/:id` *(Admin)*
-**Auth:** ADMIN | **Response `200`:** SubscriptionPlanDto cập nhật + invalidate cache `sub:plans`
-
----
-
-### PATCH `/api/v1/admin/subscriptions/plans/:id/toggle` *(Admin)*
-**Auth:** ADMIN | **Mô tả:** Toggle `is_active` — ẩn/hiện gói trên trang mua VIP
-
-**Response `204`:** No content
-
----
-
-## 4. VNPay Integration
+## 4. VNPay Integration (`VNPayService`)
 
 ### Tạo Payment URL
-```java
-public String createVNPayUrl(Payment payment, SubscriptionPlan plan, HttpServletRequest request) {
-    Map<String, String> params = new TreeMap<>();
-    params.put("vnp_Version", "2.1.0");
-    params.put("vnp_Command", "pay");
-    params.put("vnp_TmnCode", vnpayConfig.getTmnCode());
-    params.put("vnp_Amount", String.valueOf(payment.getAmount() * 100)); // Nhân 100
-    params.put("vnp_CurrCode", "VND");
-    params.put("vnp_TxnRef", payment.getOrderCode());
-    params.put("vnp_OrderInfo", payment.getOrderInfo());
-    params.put("vnp_OrderType", "other");
-    params.put("vnp_Locale", "vn");
-    params.put("vnp_ReturnUrl", vnpayConfig.getReturnUrl()); // /payments/callback/vnpay
-    params.put("vnp_IpAddr", getClientIp(request));
-    params.put("vnp_CreateDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
-    params.put("vnp_ExpireDate", LocalDateTime.now().plusMinutes(15).format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")));
-
-    // Tạo chuỗi hash data
-    String hashData = params.entrySet().stream()
-        .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
-        .collect(Collectors.joining("&"));
-
-    String secureHash = HmacSHA512(vnpayConfig.getHashSecret(), hashData);
-    return vnpayConfig.getPaymentUrl() + "?" + hashData + "&vnp_SecureHash=" + secureHash;
-}
-```
+- Params được sắp xếp theo `TreeMap` (alphabetical).
+- `vnp_Amount` = amount × 100.
+- `orderCode` đã được làm sạch `[^a-zA-Z0-9]` trước khi truyền vào.
+- Hash data: cả key lẫn value đều URL-encode, join bằng `&`.
+- Ký bằng `HmacUtils.hmacSHA512(hashSecret, hashData)`.
 
 ### Verify Callback
-```java
-public boolean verifyVNPayCallback(Map<String, String> params) {
-    String receivedHash = params.remove("vnp_SecureHash");
-    params.remove("vnp_SecureHashType");
-
-    String hashData = new TreeMap<>(params).entrySet().stream()
-        .map(e -> e.getKey() + "=" + e.getValue())
-        .collect(Collectors.joining("&"));
-
-    String expectedHash = HmacSHA512(vnpayConfig.getHashSecret(), hashData);
-    return expectedHash.equalsIgnoreCase(receivedHash);
-}
-```
+- Lấy `vnp_SecureHash` ra khỏi params, remove `vnp_SecureHashType`.
+- Build lại `hashData` từ params còn lại (cùng encoding).
+- So sánh `equalsIgnoreCase`.
 
 ---
 
-## 5. MoMo Integration
+## 5. MoMo Integration (`MoMoService`)
 
 ### Tạo Payment URL
-```java
-public String createMoMoUrl(Payment payment) {
-    String requestId = UUID.randomUUID().toString();
-    String rawSignature = String.format(
-        "accessKey=%s&amount=%s&extraData=&ipnUrl=%s&orderId=%s&orderInfo=%s&partnerCode=%s&redirectUrl=%s&requestId=%s&requestType=payWithATM",
-        momoConfig.getAccessKey(), payment.getAmount(),
-        momoConfig.getIpnUrl(),    payment.getOrderCode(),
-        payment.getOrderInfo(),    momoConfig.getPartnerCode(),
-        momoConfig.getRedirectUrl(), requestId
-    );
+- Sinh `requestId = UUID.randomUUID()`.
+- `requestType = "captureWallet"`.
+- Raw signature format:
+  ```
+  accessKey=&amount=&extraData=&ipnUrl=&orderId=&orderInfo=&partnerCode=&redirectUrl=&requestId=&requestType=
+  ```
+- Ký bằng `HmacUtils.hmacSHA256(secretKey, rawSignature)`.
+- Gọi MoMo API qua `RestTemplate.exchange()` với `ParameterizedTypeReference<Map<String, Object>>`.
+- Trả về `response.get("payUrl")`.
 
-    String signature = HmacSHA256(momoConfig.getSecretKey(), rawSignature);
-    // Gọi MoMo API → nhận payUrl
-}
-```
+### Verify Callback
+- Raw signature format (callback):
+  ```
+  accessKey=&amount=&extraData=&message=&orderId=&orderInfo=&partnerCode=&requestId=&responseTime=&resultCode=&transId=
+  ```
+- So sánh `equalsIgnoreCase` với `signature` trong params.
 
 ---
 
-## 6. Scheduled Jobs
+## 6. Scheduled Jobs (`SubscriptionJobService`)
 
 ```java
-@Component
-public class SubscriptionJobService {
+// Chạy mỗi giờ — expire subscription hết hạn
+@Scheduled(cron = "0 0 * * * *")
+public void expireSubscriptions() {
+    // UPDATE user_subscriptions SET status='EXPIRED'
+    // WHERE status='ACTIVE' AND expires_at < NOW()
+}
 
-    // Chạy mỗi giờ — expire subscription hết hạn
-    @Scheduled(cron = "0 0 * * * *")
-    @Transactional
-    public void expireSubscriptions() {
-        int updated = userSubscriptionRepository.expireOverdue(LocalDateTime.now());
-        // UPDATE user_subscriptions SET status='EXPIRED' WHERE status='ACTIVE' AND expires_at < NOW()
-        log.info("Expired {} subscriptions", updated);
-        // Không cần xóa Redis vip:status ở đây vì cache TTL 5 phút tự hết hạn
-    }
-
-    // Chạy mỗi 5 phút — expire payment quá 15 phút chưa thanh toán
-    @Scheduled(fixedRate = 300_000)
-    @Transactional
-    public void expireStalePayments() {
-        List<Long> expiredSubIds = paymentRepository.findExpiredPendingSubIds(LocalDateTime.now());
-        // SELECT subscription_id FROM payments WHERE status='PENDING' AND expired_at < NOW()
-
-        paymentRepository.bulkExpire(LocalDateTime.now());
-        // UPDATE payments SET status='EXPIRED' WHERE status='PENDING' AND expired_at < NOW()
-
-        if (!expiredSubIds.isEmpty()) {
-            userSubscriptionRepository.bulkCancel(expiredSubIds);
-            // UPDATE user_subscriptions SET status='CANCELLED' WHERE id IN (...)
-        }
-    }
+// Chạy mỗi 5 phút — expire payment quá 15 phút chưa thanh toán
+@Scheduled(fixedRate = 300_000)
+public void expireStalePayments() {
+    // 1. SELECT subscription_id FROM payments WHERE status='PENDING' AND expired_at < NOW()
+    // 2. UPDATE payments SET status='EXPIRED' WHERE status='PENDING' AND expired_at < NOW()
+    // 3. UPDATE user_subscriptions SET status='CANCELLED' WHERE id IN (...)
 }
 ```
+
+> ⚠️ **Known limitation:** Bước 1 và 2 trong `expireStalePayments` dùng 2 câu query riêng biệt, không atomic. Nếu một payment được xử lý thành công giữa 2 query, subscription tương ứng có thể bị `CANCELLED` nhầm. Cần refactor thành 1 query hoặc dùng `RETURNING`.
 
 ---
 
 ## 7. isVip Check (Dùng Bởi Module Khác)
 
 ```java
-// UserSubscriptionRepository.java
-@Query("""
-    SELECT EXISTS (
-        SELECT 1 FROM UserSubscription s
-        WHERE s.userId = :userId
-          AND s.status = 'ACTIVE'
-          AND s.expiresAt > :now
-    )
-""")
-boolean isVipActive(@Param("userId") UUID userId, @Param("now") LocalDateTime now);
-
-// SubscriptionService.java — có cache Redis
+// SubscriptionService.java
 public boolean isVipActive(UUID userId) {
     String cacheKey = "vip:status:" + userId;
-    Boolean cached = redisService.get(cacheKey, Boolean.class);
+    Boolean cached = (Boolean) redisTemplate.opsForValue().get(cacheKey);
     if (cached != null) return cached;
 
-    boolean result = subscriptionRepository.isVipActive(userId, LocalDateTime.now());
-    redisService.set(cacheKey, result, Duration.ofMinutes(5));
-    return result;
+    boolean active = userSubscriptionRepository
+        .findLatestActiveSubscription(userId, ZonedDateTime.now()).isPresent();
+    redisTemplate.opsForValue().set(cacheKey, active, Duration.ofMinutes(5));
+    return active;
 }
 
-// ⚠️ Phải gọi khi subscription activated hoặc expired:
-redisService.delete("vip:status:" + userId);
+// Phải gọi khi subscription được kích hoạt hoặc expired:
+public void clearVipCache(UUID userId) {
+    redisTemplate.delete("vip:status:" + userId);
+}
 ```
 
 ---
@@ -475,8 +385,10 @@ redisService.delete("vip:status:" + userId);
 |---|---|---|
 | `PLAN_NOT_FOUND` | 404 | Gói không tồn tại |
 | `PLAN_NOT_ACTIVE` | 400 | Gói đang bị ẩn |
-| `EMAIL_NOT_VERIFIED` | 403 | Cần xác thực email trước khi mua VIP |
+| `EMAIL_NOT_VERIFIED` | 400 | Cần xác thực email trước khi mua VIP |
+| `PENDING_PAYMENT_EXISTS` | 400 | Đã có giao dịch PENDING cho gói này |
+| `UNSUPPORTED_GATEWAY` | 400 | Gateway không hợp lệ |
 | `PAYMENT_NOT_FOUND` | 404 | Không tìm thấy giao dịch |
-| `PAYMENT_ALREADY_PROCESSED` | 409 | Giao dịch đã xử lý (idempotency) |
 | `INVALID_SIGNATURE` | 400 | Chữ ký từ gateway không hợp lệ |
+| `AMOUNT_MISMATCH` | 400 | Số tiền callback không khớp DB |
 | `VIP_REQUIRED` | 403 | Cần VIP để thực hiện hành động này |

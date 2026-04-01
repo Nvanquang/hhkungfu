@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, User, Crown, LogOut, Settings, Clock, Bookmark, X, Loader2 } from "lucide-react";
+import { Search, User, Crown, LogOut, Settings, Clock, Bookmark, X, Loader2, DollarSign } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import {
   Button,
@@ -339,6 +339,9 @@ export function Header() {
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/me/history')}>
                     <Clock className="mr-3 w-4 h-4 text-primary" /> Lịch sử xem
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/me/payments')}>
+                    <DollarSign className="mr-3 w-4 h-4 text-primary" /> Lịch sử thanh toán
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/settings')}>
                     <Settings className="mr-3 w-4 h-4 text-primary" /> Cài đặt

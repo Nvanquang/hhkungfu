@@ -46,7 +46,10 @@ public class SecurityConfiguration {
                                                                 "/api/v1/studios",
                                                                 "/api/v1/studios/**",
                                                                 "/api/v1/files/hls/**",
+                                                                "/api/v1/subscriptions/plans",
                                                                 "/api/v1/episodes/*/stream-info")
+                                                .permitAll()
+                                                .requestMatchers("/api/v1/payments/callback/**", "/ws/**", "/ws")
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.POST,
                                                                 "/api/v1/episodes/*/view")

@@ -103,6 +103,50 @@
     {
       "name": "storage.r2.endpoint",
       "type": "java.lang.String"
+    },
+    {
+      "name": "payment.vnpay.tmn-code",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "payment.vnpay.hash-secret",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "payment.vnpay.payment-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "payment.vnpay.return-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "payment.vnpay.ipn-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "payment.momo.partner-code",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "payment.momo.access-key",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "payment.momo.secret-key",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "payment.momo.api-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "payment.momo.redirect-url",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "payment.momo.ipn-url",
+      "type": "java.lang.String"
     }
   ]
 }

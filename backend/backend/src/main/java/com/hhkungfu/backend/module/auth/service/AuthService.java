@@ -32,6 +32,7 @@ import com.hhkungfu.backend.module.user.entity.User;
 import com.hhkungfu.backend.module.user.enums.ProviderType;
 import com.hhkungfu.backend.module.user.enums.RoleType;
 import com.hhkungfu.backend.module.user.repository.UserRepository;
+import com.hhkungfu.backend.module.subscription.service.SubscriptionService;
 
 import java.time.Duration;
 import java.util.UUID;
@@ -47,6 +48,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
+    private final SubscriptionService subscriptionService;
 
     @Value("${security.authentication.jwt.access-token-validity-in-seconds}")
     private long accessTokenExpiration;
@@ -262,6 +264,7 @@ public class AuthService {
                 .provider(user.getProvider())
                 .avatarUrl(user.getAvatarUrl())
                 .bio(user.getBio())
+                .isVip(subscriptionService.isVipActive(user.getId()))
                 .createdAt(user.getCreatedAt())
                 .build();
     }

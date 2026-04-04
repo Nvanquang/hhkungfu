@@ -33,6 +33,17 @@ const VerifyPasswordChange = lazy(() => import("@/pages/Settings/VerifyPasswordC
 const VipPlans = lazy(() => import("@/pages/Vip/VipPlans"));
 const VipCheckout = lazy(() => import("@/pages/Vip/VipCheckout"));
 const PaymentResult = lazy(() => import("@/pages/Vip/PaymentResult"));
+const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout/index"));
+const AdminDashboard = lazy(() => import("@/pages/admin/Dashboard/index"));
+const AdminAnimeList = lazy(() => import("@/pages/admin/AnimeList/index"));
+const AdminAnimeForm = lazy(() => import("@/pages/admin/AnimeForm/index"));
+const AdminEpisodeManager = lazy(() => import("@/pages/admin/EpisodeManager/index"));
+const AdminVideoUpload = lazy(() => import("@/pages/admin/VideoUpload/index"));
+const AdminGenreStudio = lazy(() => import("@/pages/admin/GenreStudio/index"));
+const AdminUserList = lazy(() => import("@/pages/admin/UserList/index"));
+const AdminAnalytics = lazy(() => import("@/pages/admin/Analytics/index"));
+const AdminCommentModeration = lazy(() => import("@/pages/admin/CommentModeration/index"));
+const AdminSubscriptionManager = lazy(() => import("@/pages/admin/SubscriptionManager/index"));
 
 // App wrapper to use hooks correctly within the context (though useAuthStore can be anywhere, it's fine inside App)
 function AppContent() {
@@ -49,7 +60,7 @@ function AppContent() {
             <Route path="/anime" element={<AnimeCatalog />} />
             <Route path="/anime/:slug" element={<AnimeDetail />} />
             <Route path="/search" element={<Search />} />
-            
+
             {/* Public Profile */}
             <Route path="/profile/:userId" element={<Profile />} />
 
@@ -67,6 +78,24 @@ function AppContent() {
             {/* Public VIP Pages */}
             <Route path="/vip" element={<VipPlans />} />
             <Route path="/vip/result" element={<PaymentResult />} />
+          </Route>
+
+          {/* Admin routes must not use client MainLayout */}
+          <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="animes" element={<AdminAnimeList />} />
+              <Route path="animes/new" element={<AdminAnimeForm />} />
+              <Route path="animes/:id/edit" element={<AdminAnimeForm />} />
+              <Route path="animes/:id/episodes" element={<AdminEpisodeManager />} />
+              <Route path="animes/:id/episodes/new" element={<AdminEpisodeManager />} />
+              <Route path="upload/:episodeId" element={<AdminVideoUpload />} />
+              <Route path="genres-studios" element={<AdminGenreStudio />} />
+              <Route path="users" element={<AdminUserList />} />
+              <Route path="comments" element={<AdminCommentModeration />} />
+              <Route path="subscriptions" element={<AdminSubscriptionManager />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+            </Route>
           </Route>
 
           {/* Auth Pages without MainLayout */}

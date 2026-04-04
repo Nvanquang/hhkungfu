@@ -94,14 +94,14 @@ public class GlobalExceptionHandler {
     }
 
     // ── Fallback: tất cả exception chưa được bắt (500) ───────────────────────
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
-        // Không lộ stack trace ra ngoài; log nội bộ ở đây nếu cần
-        return buildResponse(false, "Internal server error",
-                ErrorConstants.INTERNAL_SERVER_ERROR.getCode(),
-                null,
-                HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+    // @ExceptionHandler(Exception.class)
+    // public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+    //     // Không lộ stack trace ra ngoài; log nội bộ ở đây nếu cần
+    //     return buildResponse(false, "Internal server error",
+    //             ErrorConstants.INTERNAL_SERVER_ERROR.getCode(),
+    //             null,
+    //             HttpStatus.INTERNAL_SERVER_ERROR);
+    // }
 
     // ── Helper ───────────────────────────────────────────────────────────────
     private ResponseEntity<Map<String, Object>> buildResponse(

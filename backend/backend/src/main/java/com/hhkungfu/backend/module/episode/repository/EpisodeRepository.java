@@ -18,6 +18,11 @@ import java.util.Optional;
 @Repository
 public interface EpisodeRepository extends JpaRepository<Episode, Long> {
 
+    long countByDeletedAtIsNull();
+
+    @Query("SELECT COALESCE(SUM(e.viewCount), 0) FROM Episode e WHERE e.deletedAt IS NULL")
+    long sumViewCountNotDeleted();
+
     Optional<Episode> findByAnimeIdAndEpisodeNumberAndDeletedAtIsNull(Long animeId, Integer episodeNumber);
 
     Page<Episode> findByAnimeIdAndDeletedAtIsNull(Long animeId, Pageable pageable);

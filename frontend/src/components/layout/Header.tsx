@@ -52,7 +52,7 @@ export function Header() {
     queryFn: animeService.getGenres,
     staleTime: 1000 * 60 * 60,
   });
-  const genres = genreRes?.data?.items || [];
+  const genres = genreRes?.data || [];
 
   const { data: searchRes, isFetching: isSearchFetching } = useQuery({
     queryKey: ["header-search", debouncedQuery],
@@ -106,9 +106,9 @@ export function Header() {
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-[height,background-color,border-color,box-shadow] duration-300",
           isScrolled
-            ? "h-16 bg-background/80 backdrop-blur-md border-b border-border/50 shadow-sm"
-            : "h-20 bg-gradient-to-b from-background/90 to-transparent",
-          isFocused && "bg-background/95 backdrop-blur-lg border-b border-border/50 h-16 shadow-2xl"
+            ? "h-16 bg-zinc-950/80 backdrop-blur-md border-b border-white/5 shadow-sm"
+            : "h-20 bg-gradient-to-b from-black/90 to-transparent",
+          isFocused && "bg-zinc-950/95 backdrop-blur-lg border-b border-white/10 h-16 shadow-2xl"
         )}
       >
         <div className="container h-full mx-auto px-4 md:px-6 flex items-center justify-between gap-4">
@@ -334,6 +334,11 @@ export function Header() {
                   <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate(`/profile/${user.id}`)}>
                     <User className="mr-3 w-4 h-4 text-primary" /> Trang cá nhân
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/admin')}>
+                      <Settings className="mr-3 w-4 h-4 text-primary" /> Trang quản trị
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/me/bookmarks')}>
                     <Bookmark className="mr-3 w-4 h-4 text-primary" /> Danh sách bookmarks
                   </DropdownMenuItem>

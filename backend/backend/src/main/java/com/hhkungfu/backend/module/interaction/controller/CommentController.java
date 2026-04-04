@@ -39,7 +39,7 @@ public class CommentController {
         @Operation(summary = "Get episode comments", description = "Get paginated root comments for an episode")
         @ApiResponse(responseCode = "200", description = "Comments retrieved successfully")
         public ResponseEntity<PageResponse<CommentDto>> getComments(
-                        @PathVariable Long episodeId,
+                        @PathVariable(name = "episodeId") Long episodeId,
                         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
                 UUID currentUserId = SecurityUtil.getCurrentUserId()
@@ -55,7 +55,7 @@ public class CommentController {
         @Operation(summary = "Get comment replies", description = "Get paginated replies for a comment")
         @ApiResponse(responseCode = "200", description = "Replies retrieved successfully")
         public ResponseEntity<PageResponse<CommentDto>> getReplies(
-                        @PathVariable Long commentId,
+                        @PathVariable(name = "commentId") Long commentId,
                         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable) {
 
                 UUID currentUserId = SecurityUtil.getCurrentUserId()
@@ -71,7 +71,7 @@ public class CommentController {
         @Operation(summary = "Create comment or reply", description = "Create a new comment or a reply to an existing comment")
         @ApiResponse(responseCode = "201", description = "Comment created successfully")
         public ResponseEntity<CommentDto> createComment(
-                        @PathVariable Long episodeId,
+                        @PathVariable(name = "episodeId") Long episodeId,
                         @Valid @RequestBody CreateCommentRequest request) {
 
                 UUID currentUserId = SecurityUtil.getCurrentUserId()
@@ -89,7 +89,7 @@ public class CommentController {
         @Operation(summary = "Update comment", description = "Update the content of an existing comment")
         @ApiResponse(responseCode = "200", description = "Comment updated successfully")
         public ResponseEntity<CommentDto> updateComment(
-                        @PathVariable Long id,
+                        @PathVariable(name = "id") Long id,
                         @Valid @RequestBody UpdateCommentRequest request) {
 
                 UUID currentUserId = SecurityUtil.getCurrentUserId()
@@ -104,7 +104,7 @@ public class CommentController {
         @ApiMessage("Delete comment successfully")
         @Operation(summary = "Delete comment", description = "Soft delete a comment (by owner or admin)")
         @ApiResponse(responseCode = "204", description = "Comment deleted successfully")
-        public ResponseEntity<Void> deleteComment(@PathVariable Long id) {
+        public ResponseEntity<Void> deleteComment(@PathVariable(name = "id") Long id) {
                 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 UUID currentUserId = SecurityUtil.getCurrentUserId()
                                 .map(UUID::fromString)
@@ -124,7 +124,7 @@ public class CommentController {
         @ApiMessage("Toggle like successfully")
         @Operation(summary = "Toggle like", description = "Toggle like/unlike for a comment")
         @ApiResponse(responseCode = "200", description = "Like toggled successfully")
-        public ResponseEntity<CommentLikeResponse> toggleLike(@PathVariable Long id) {
+        public ResponseEntity<CommentLikeResponse> toggleLike(@PathVariable(name = "id") Long id) {
                 UUID currentUserId = SecurityUtil.getCurrentUserId()
                                 .map(UUID::fromString)
                                 .orElseThrow(() -> new RuntimeException("Unauthorized"));

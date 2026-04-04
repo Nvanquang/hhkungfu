@@ -10,12 +10,19 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface AnimeRepository extends JpaRepository<Anime, Long>, JpaSpecificationExecutor<Anime> {
+
+  long countByDeletedAtIsNull();
+
+  Page<Anime> findByDeletedAtIsNull(Pageable pageable);
+
+  List<Anime> findTop5ByDeletedAtIsNullOrderByViewCountDesc();
 
   @Query("SELECT a FROM Anime a LEFT JOIN FETCH a.genres LEFT JOIN FETCH a.studios WHERE a.slug = :slug AND a.deletedAt IS NULL")
   Optional<Anime> findBySlugAndDeletedAtIsNull(@Param("slug") String slug);
@@ -54,7 +61,28 @@ public interface AnimeRepository extends JpaRepository<Anime, Long>, JpaSpecific
       """, nativeQuery = true)
   Page<Anime> findRelatedAnimes(@Param("animeId") Long animeId, Pageable pageable);
 
+  @Transactional
   @Modifying
   @Query("UPDATE Anime a SET a.updatedAt = CURRENT_TIMESTAMP WHERE a.id = :id")
   void touchUpdatedAt(@Param("id") Long id);
+
+  boolean existsByGenresId(Long genreId);
+
+  boolean existsByStudiosId(Long studioId);
+
+  @Query("SELECT COUNT(a) FROM Anime a JOIN a.studios s WHERE s.id = :studioId AND a.deletedAt IS NULL")
+  long countByStudioId(@Param("studioId") Long studioId);
+
+  @Transactional
+  @Modifying
+  @Query(value = """
+      UPDATE animes a
+      SET view_count = (
+          SELECT COALESCE(SUM(e.view_count), 0)
+          FROM episodes e
+          WHERE e.anime_id = a.id AND e.deleted_at IS NULL
+      )
+      WHERE a.deleted_at IS NULL
+      """, nativeQuery = true)
+  void updateAllViewCounts();
 }

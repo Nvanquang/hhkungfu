@@ -19,4 +19,14 @@ public interface RatingRepository extends JpaRepository<Rating, RatingId> {
 
     @Query("SELECT r.score as score, COUNT(r) as count FROM Rating r WHERE r.id.animeId = :animeId GROUP BY r.score")
     List<Map<String, Object>> getScoreDistribution(@Param("animeId") Long animeId);
+
+    long countById_AnimeId(Long animeId);
+    long countById_AnimeIdAndCreatedAtBetween(Long animeId, java.time.ZonedDateTime start, java.time.ZonedDateTime end);
+
+    @Query("SELECT AVG(r.score) FROM Rating r")
+    Double getAverageScoreAll();
+
+    long countByScoreGreaterThanEqual(int score);
+
+    long countByCreatedAtBetween(java.time.ZonedDateTime start, java.time.ZonedDateTime end);
 }

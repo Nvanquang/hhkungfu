@@ -171,14 +171,14 @@ export function PlayerControls({
       >
         {/* Progress / seek bar */}
         <div className="px-3 pb-1">
-          <div 
+          <div
             className="relative h-1.5 group/seek"
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
           >
             {/* Hover tooltip */}
             {hoverTime !== null && (
-              <div 
+              <div
                 className="absolute bottom-full mb-2 -translate-x-1/2 px-2 py-1 bg-black/90 text-white text-[10px] font-bold rounded border border-white/20 whitespace-nowrap pointer-events-none z-10"
                 style={{ left: `${hoverPos}%` }}
               >
@@ -195,7 +195,7 @@ export function PlayerControls({
               style={{ width: `${progress}%` }}
             />
             {/* Seek thumb (nub) */}
-            <div 
+            <div
               className={cn(
                 "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-0 h-0 bg-primary rounded-full shadow-lg transition-all duration-200 pointer-events-none",
                 "group-hover/seek:w-3.5 group-hover/seek:h-3.5",
@@ -285,14 +285,14 @@ export function PlayerControls({
 
             {/* Subtitle selector */}
             <SubtitleSelector
-              subtitles={streamInfo.subtitles}
+              subtitles={streamInfo.subtitles as any}
               activeLanguage={activeSubtitle}
               onSelect={handleSubtitleSelect}
             />
 
             {/* Quality selector */}
             <QualitySelector
-              qualities={streamInfo.qualities}
+              qualities={streamInfo.qualities as any}
               currentQuality={currentQuality}
               onSelect={handleQualitySelect}
             />

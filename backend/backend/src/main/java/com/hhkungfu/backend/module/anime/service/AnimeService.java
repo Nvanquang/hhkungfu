@@ -109,10 +109,13 @@ public class AnimeService {
             default -> "createdAt"; // NEWEST hoặc fallback
         };
 
+        Sort sort = Sort.by(direction, sortField)
+                .and(Sort.by(direction, "id"));
+
         return PageRequest.of(
                 req.getPage() - 1, // ← 1-based → 0-based
                 req.getLimit(),
-                Sort.by(direction, sortField));
+                sort);
     }
 
     private Specification<Anime> deletedAtIsNull() {

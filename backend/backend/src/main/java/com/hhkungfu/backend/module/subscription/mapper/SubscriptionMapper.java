@@ -19,6 +19,7 @@ import java.time.ZonedDateTime;
 public interface SubscriptionMapper {
 
     @Mapping(target = "savingPercent", source = "plan", qualifiedByName = "calculateSavingPercent")
+    @Mapping(target = "isActive", source = "active")
     SubscriptionPlanDto toPlanDto(SubscriptionPlan plan);
 
     @Mapping(target = "id", ignore = true)
@@ -48,7 +49,8 @@ public interface SubscriptionMapper {
 
     @Named("calculateDaysRemaining")
     default Long calculateDaysRemaining(ZonedDateTime expiresAt) {
-        if (expiresAt == null) return null;
+        if (expiresAt == null)
+            return null;
         long days = Duration.between(ZonedDateTime.now(), expiresAt).toDays();
         return Math.max(0, days);
     }

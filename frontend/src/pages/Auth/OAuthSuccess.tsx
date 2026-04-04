@@ -23,7 +23,9 @@ export default function OAuthSuccess() {
         useAuthStore.getState().setToken(token);
         const user = await authService.getMe();
         useAuthStore.getState().setAuth(user, token);
-        navigate("/", { replace: true });
+        
+        const destination = user.role === "ADMIN" ? "/admin" : "/";
+        navigate(destination, { replace: true });
       } catch {
         useAuthStore.getState().logout();
         navigate("/login", { replace: true });

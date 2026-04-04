@@ -18,6 +18,6 @@ public class SubscriptionPlanDto {
     private Integer savingPercent;
     private String description;
     private List<String> features;
-    private boolean isActive;
+    private Boolean isActive;
     private int sortOrder;
 }

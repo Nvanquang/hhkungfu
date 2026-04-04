@@ -5,8 +5,10 @@ import com.hhkungfu.backend.common.exception.ErrorConstants;
 import com.hhkungfu.backend.common.exception.ResourceNotFoundException;
 import com.hhkungfu.backend.module.anime.dto.GenreDto;
 import com.hhkungfu.backend.module.anime.dto.request.CreateGenreRequest;
+import com.hhkungfu.backend.module.anime.dto.request.UpdateGenreRequest;
 import com.hhkungfu.backend.module.anime.entity.Genre;
 import com.hhkungfu.backend.module.anime.mapper.GenreMapper;
+import com.hhkungfu.backend.module.anime.repository.AnimeRepository;
 import com.hhkungfu.backend.module.anime.repository.GenreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class GenreService {
 
     private final GenreRepository genreRepository;
     private final GenreMapper genreMapper;
+    private final AnimeRepository animeRepository;
 
     @Transactional(readOnly = true)
     public List<GenreDto> getAllGenres() {
@@ -39,6 +42,30 @@ public class GenreService {
 
         Genre genre = genreMapper.toEntity(request);
         return genreMapper.toDto(genreRepository.save(genre));
+    }
+
+    @Transactional
+    public GenreDto updateGenre(Long id, UpdateGenreRequest request) {
+        Genre genre = genreRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Genre not found", "GENRE", ErrorConstants.GENRE_NOT_FOUND.getCode()));
+
+        if (!genre.getSlug().equals(request.slug()) && genreRepository.existsBySlug(request.slug())) {
+            throw new ConflictException("Genre slug already exists", ErrorConstants.GENRE_ALREADY_EXISTS.getCode());
+        }
+
+        genre.setName(request.name());
+        genre.setNameVi(request.nameVi());
+        genre.setSlug(request.slug());
+
+        return genreMapper.toDto(genreRepository.save(genre));
+    }
+
+    @Transactional
+    public void deleteGenre(Long id) {
+        if (animeRepository.existsByGenresId(id)) {
+            throw new ConflictException("Cannot delete genre because it is used by some animes", ErrorConstants.GENRE_IN_USE.getCode());
+        }
+        genreRepository.deleteById(id);
     }
 
     @Transactional(readOnly = true)

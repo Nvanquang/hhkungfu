@@ -57,10 +57,10 @@ export function VideoPlayer({
   const handleSeek = useCallback((direction: "forward" | "backward", amount: number = 10) => {
     const video = videoRef.current;
     if (!video) return;
-    
+
     const seconds = direction === "forward" ? amount : -amount;
     video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + seconds));
-    
+
     setSeekOverlay(direction);
     if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current);
     seekTimeoutRef.current = setTimeout(() => setSeekOverlay(null), 600);
@@ -116,12 +116,12 @@ export function VideoPlayer({
 
       {/* Seek Click/Double-click Areas */}
       <div className="absolute inset-0 flex pointer-events-none">
-        <div 
-          className="flex-1 pointer-events-auto" 
+        <div
+          className="flex-1 pointer-events-auto"
           onDoubleClick={() => handleSeek("backward")}
         />
-        <div 
-          className="flex-1 pointer-events-auto" 
+        <div
+          className="flex-1 pointer-events-auto"
           onDoubleClick={() => handleSeek("forward")}
         />
       </div>
@@ -167,7 +167,7 @@ export function VideoPlayer({
           animeSlug={animeSlug}
           nextEpisode={nextEpisode}
           videoRef={videoRef}
-          durationSeconds={streamInfo.durationSeconds}
+          durationSeconds={streamInfo.durationSeconds as any}
         />
       )}
     </div>

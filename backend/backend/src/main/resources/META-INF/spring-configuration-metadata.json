@@ -147,6 +147,22 @@
     {
       "name": "payment.momo.ipn-url",
       "type": "java.lang.String"
+    },
+    {
+      "name": "cloudinary.enabled",
+      "type": "java.lang.Boolean"
+    },
+    {
+      "name": "cloudinary.cloud-name",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "cloudinary.api-key",
+      "type": "java.lang.String"
+    },
+    {
+      "name": "cloudinary.api-secret",
+      "type": "java.lang.String"
     }
   ]
 }

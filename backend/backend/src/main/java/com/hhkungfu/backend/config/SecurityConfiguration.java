@@ -54,6 +54,8 @@ public class SecurityConfiguration {
                                                 .requestMatchers(HttpMethod.POST,
                                                                 "/api/v1/episodes/*/view")
                                                 .permitAll()
+                                                .requestMatchers("/api/v1/admin/**")
+                                                .hasRole("ADMIN")
                                                 .requestMatchers(
                                                                 "/api/v1/auth/register",
                                                                 "/api/v1/auth/login",

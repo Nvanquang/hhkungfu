@@ -16,6 +16,18 @@ public final class RedisKeys {
         return "refresh:" + userId; 
     }
 
+    public static String anime(Long id) {
+        return "anime:" + id;
+    }
+
+    public static String animeSlug(String slug) {
+        return "anime:slug:" + slug;
+    }
+
+    public static String animeFeatured() {
+        return "anime:featured";
+    }
+
     public static String userLogout(String userId) {
         return "user:logout:" + userId;
     }

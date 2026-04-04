@@ -6,4 +6,5 @@ export * from "./episode.types";
 export * from "./video.types";
 export * from "./comment.types";
 export * from "./subscription.types";
+export * from "./admin.types";
 

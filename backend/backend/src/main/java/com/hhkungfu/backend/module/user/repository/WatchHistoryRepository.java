@@ -16,6 +16,8 @@ import com.hhkungfu.backend.module.user.entity.WatchHistoryId;
 import java.util.List;
 import java.util.UUID;
 
+import java.time.ZonedDateTime;
+
 @Repository
 public interface WatchHistoryRepository extends JpaRepository<WatchHistory, WatchHistoryId> {
 
@@ -48,4 +50,13 @@ public interface WatchHistoryRepository extends JpaRepository<WatchHistory, Watc
        @Transactional
        @Query("DELETE FROM WatchHistory wh WHERE wh.id.userId = :userId")
        void deleteByIdUserId(@Param("userId") UUID userId);
+
+       @Query("SELECT COUNT(wh) FROM WatchHistory wh WHERE wh.watchedAt >= :since")
+       long countWatchedSince(@Param("since") ZonedDateTime since);
+
+       @Query("SELECT COUNT(wh) FROM WatchHistory wh WHERE wh.watchedAt >= :from AND wh.watchedAt <= :to")
+       long countWatchedBetween(@Param("from") ZonedDateTime from, @Param("to") ZonedDateTime to);
+
+       @Query("SELECT wh.id.userId, COUNT(wh) FROM WatchHistory wh WHERE wh.id.userId IN :ids GROUP BY wh.id.userId")
+       List<Object[]> countByUserIds(@Param("ids") List<UUID> ids);
 }

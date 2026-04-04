@@ -3,6 +3,7 @@ package com.hhkungfu.backend.module.anime.controller;
 import com.hhkungfu.backend.common.annotation.ApiMessage;
 import com.hhkungfu.backend.module.anime.dto.GenreDto;
 import com.hhkungfu.backend.module.anime.dto.request.CreateGenreRequest;
+import com.hhkungfu.backend.module.anime.dto.request.UpdateGenreRequest;
 import com.hhkungfu.backend.module.anime.service.GenreService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -43,5 +44,27 @@ public class GenreController {
     public ResponseEntity<GenreDto> createGenre(@Valid @RequestBody CreateGenreRequest request) {
         log.info("REST request to create genre");
         return ResponseEntity.status(HttpStatus.CREATED).body(genreService.createGenre(request));
+    }
+
+    @PutMapping("/{id}")
+    @ApiMessage("Update genre successfully")
+    @Operation(summary = "Update genre", description = "Update an existing genre")
+    @ApiResponse(responseCode = "200", description = "Genre updated successfully")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<GenreDto> updateGenre(@PathVariable(name = "id") Long id,
+            @Valid @RequestBody UpdateGenreRequest request) {
+        log.info("REST request to update genre: {}", id);
+        return ResponseEntity.ok(genreService.updateGenre(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    @ApiMessage("Delete genre successfully")
+    @Operation(summary = "Delete genre", description = "Delete a genre")
+    @ApiResponse(responseCode = "200", description = "Genre deleted successfully")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteGenre(@PathVariable(name = "id") Long id) {
+        log.info("REST request to delete genre: {}", id);
+        genreService.deleteGenre(id);
+        return ResponseEntity.ok().build();
     }
 }

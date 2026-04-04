@@ -9,7 +9,7 @@ export function useCatalogData(params: AnimeQueryParams) {
     queryFn: animeService.getGenres,
     staleTime: 60 * 60_000,
   });
-  const genres = useMemo(() => genresRes?.data?.items ?? [], [genresRes]);
+  const genres = useMemo(() => genresRes?.data ?? [], [genresRes]);
 
   const {
     data: animesRes,

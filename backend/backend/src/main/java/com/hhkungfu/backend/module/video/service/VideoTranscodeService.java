@@ -43,7 +43,7 @@ public class VideoTranscodeService {
 
     @Async("transcodeExecutor")
     public void runTranscode(Long jobId) {
-        TranscodeJob job = transcodeJobRepository.findById(jobId).orElseThrow();
+        TranscodeJob job = transcodeJobRepository.findByIdWithEpisodeAndAnime(jobId).orElseThrow();
 
         try {
             job.setStatus(TranscodeJobStatus.RUNNING);
@@ -105,6 +105,20 @@ public class VideoTranscodeService {
             transcodeJobRepository.save(job);
             episodeRepository.updateVideoStatus(job.getEpisode().getId(), VideoStatus.FAILED);
         }
+    }
+
+    public void retranscode(Long jobId) {
+        TranscodeJob job = transcodeJobRepository.findById(jobId).orElseThrow();
+        job.setStatus(TranscodeJobStatus.QUEUED);
+        job.setErrorMessage(null);
+        job.setProgress((short) 0);
+        job.setCurrentStep("Re-queued for retry");
+        job.setStartedAt(null);
+        job.setCompletedAt(null);
+        transcodeJobRepository.save(job);
+
+        // This calls the @Async runTranscode method
+        runTranscode(jobId);
     }
 
     private void runFfmpeg(String inputPath, String outputDir, int width, int height, int bitrate) throws IOException {

@@ -140,7 +140,6 @@
   .bg-card,
   [data-radix-popper-content-wrapper] > div,
   [role="dialog"] {
-    position: relative;
     box-shadow:
       0 10px 34px rgba(0, 0, 0, 0.52),
       inset 0 1px 0 rgba(255, 255, 255, 0.045) !important;
@@ -159,4 +158,53 @@
       0 0 0 4px rgba(229, 9, 20, 0.18),
       0 10px 26px rgba(0, 0, 0, 0.45) !important;
   }
+}
+
+/* Admin page theme override (Force Light Theme) */
+.admin-page {
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 221 83% 53%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221 83% 53%;
+
+  /* Fix cho lỗi nhảy scroll */
+  scroll-behavior: auto !important;
+}
+
+body.admin-page {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  min-height: 100vh;
+  /* Tránh nhảy Layout khi ẩn scrollbar */
+  scrollbar-gutter: stable;
+}
+
+body.admin-page::before {
+  display: none;
+}
+
+/* Fix Dropdown Menu Visibility specifically for Admin to avoid global leaks */
+.admin-page [data-slot="dropdown-menu-content"],
+.admin-page [role="menu"] {
+  z-index: 99999 !important;
+  opacity: 1 !important;
+  background-color: white !important; 
+  color: #0f172a !important; 
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
 }

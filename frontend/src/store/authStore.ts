@@ -11,7 +11,7 @@ interface AuthState {
 
   setAuth: (user: UserDto, accessToken: string) => void;
   setToken: (accessToken: string) => void;
-  logout: (callApi?: boolean) => void;
+  logout: (callApi?: boolean) => Promise<void>;
   updateUser: (user: Partial<UserDto>) => void;
   setLoading: (loading: boolean) => void;
 }

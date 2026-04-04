@@ -30,5 +30,6 @@ public class AnimeSummaryDto {
     private Boolean hasVipContent;
     private List<GenreDto> genres;
     private Boolean isBookmarked;
+    private Boolean isFeatured;
     private LocalDateTime createdAt;
 }

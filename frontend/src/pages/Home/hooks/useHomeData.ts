@@ -31,7 +31,7 @@ export function useHomeData(activeGenre: string | null) {
     queryFn: animeService.getGenres,
     staleTime: 60 * 60_000,
   });
-  const genres = useMemo(() => genresRes?.data?.items ?? [], [genresRes]);
+  const genres = useMemo(() => genresRes?.data ?? [], [genresRes]);
 
   // Nếu chưa chọn genre thì fallback về genres[0]
   const effectiveGenreForQuery = activeGenre ?? genres[0]?.slug ?? null;

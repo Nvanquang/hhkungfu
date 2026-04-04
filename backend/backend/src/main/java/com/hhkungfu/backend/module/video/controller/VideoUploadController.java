@@ -33,7 +33,7 @@ public class VideoUploadController {
     @Operation(summary = "Upload and transcode a video file (Admin)")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, Object>> uploadVideo(
-            @PathVariable Long episodeId,
+            @PathVariable(name = "episodeId") Long episodeId,
             @Parameter(description = "Video file to upload", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE, schema = @Schema(type = "string", format = "binary"))) @RequestParam("file") MultipartFile file) {
 
         log.info("REST request to upload video for episode {}", episodeId);

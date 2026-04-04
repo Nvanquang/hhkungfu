@@ -22,7 +22,7 @@ public class VideoStreamController {
 
     @GetMapping("/{episodeId}/master.m3u8")
     @Operation(summary = "Serve master.m3u8 playlist")
-    public ResponseEntity<Resource> getMasterPlaylist(@PathVariable Long episodeId) {
+    public ResponseEntity<Resource> getMasterPlaylist(@PathVariable(name = "episodeId") Long episodeId) {
         Resource resource = videoStreamService.loadHlsFile("ep-" + episodeId + "/master.m3u8");
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, "application/vnd.apple.mpegurl")
@@ -32,8 +32,8 @@ public class VideoStreamController {
     @GetMapping("/{episodeId}/{quality}/index.m3u8")
     @Operation(summary = "Serve quality-specific playlist")
     public ResponseEntity<Resource> getQualityPlaylist(
-            @PathVariable Long episodeId,
-            @PathVariable String quality) {
+            @PathVariable(name = "episodeId") Long episodeId,
+            @PathVariable(name = "quality") String quality) {
         Resource resource = videoStreamService.loadHlsFile("ep-" + episodeId + "/" + quality + "/index.m3u8");
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, "application/vnd.apple.mpegurl")
@@ -43,9 +43,9 @@ public class VideoStreamController {
     @GetMapping("/{episodeId}/{quality}/{segment}.ts")
     @Operation(summary = "Serve .ts video segment (supports Range requests)")
     public ResponseEntity<Resource> getSegment(
-            @PathVariable Long episodeId,
-            @PathVariable String quality,
-            @PathVariable String segment,
+            @PathVariable(name = "episodeId") Long episodeId,
+            @PathVariable(name = "quality") String quality,
+            @PathVariable(name = "segment") String segment,
             @RequestHeader(value = HttpHeaders.RANGE, required = false) String range) {
         Resource resource = videoStreamService.loadHlsFile("ep-" + episodeId + "/" + quality + "/" + segment + ".ts");
         return ResponseEntity.ok()

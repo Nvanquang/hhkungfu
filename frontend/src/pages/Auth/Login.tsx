@@ -55,9 +55,12 @@ export default function Login() {
     try {
       setGlobalError("");
       const result = await authService.login(data);
-      setAuth(result.data.user, result.data.accessToken);
-      toast.success(result.message); // Hiển thị thông báo thành công từ backend
-      navigate("/");
+      const user = result.data.user;
+      setAuth(user, result.data.accessToken);
+      toast.success(result.message);
+      
+      const destination = user.role === "ADMIN" ? "/admin" : "/";
+      navigate(destination, { replace: true });
     } catch (error: unknown) {
       const e = error as HttpError;
       const code = typeof e.response?.data?.error === "object" ? e.response?.data?.error?.code : undefined;

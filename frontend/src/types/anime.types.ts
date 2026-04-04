@@ -1,7 +1,31 @@
 export type AnimeStatus = 'ONGOING' | 'COMPLETED' | 'UPCOMING';
 export type AnimeType = 'TV' | 'MOVIE' | 'OVA' | 'SPECIAL' | 'ONA';
 export type AnimeSeason = 'WINTER' | 'SPRING' | 'SUMMER' | 'FALL';
-export type AgeRating = 'G' | 'PG' | 'PG-13' | 'R' | 'R+';
+export type AgeRating = 'G' | 'PG' | 'PG_13' | 'R' | 'R_PLUS';
+
+/** Khớp với CreateAnimeRequest.java record (backend) */
+export interface CreateAnimeRequest {
+  title: string;
+  titleVi?: string;
+  titleOther?: string[];
+  slug: string;
+  description?: string;
+  thumbnailUrl?: string;
+  bannerUrl?: string;
+  status: AnimeStatus;
+  type: AnimeType;
+  totalEpisodes?: number;
+  episodeDuration?: number;
+  airedFrom?: string;
+  airedTo?: string;
+  season?: AnimeSeason;
+  year?: number;
+  ageRating?: AgeRating;
+  malScore?: number;
+  isFeatured?: boolean;
+  genreIds?: number[];
+  studioIds?: number[];
+}
 
 export interface Genre {
   id: number;
@@ -32,7 +56,7 @@ export interface AnimeSummary {
   hasVipContent: boolean;
   genres: Genre[];
   isBookmarked?: boolean;
-  // Present in `/animes/recently-updated`
+  isFeatured?: boolean;
   latestEp?: number;
   latestEpAdded?: string;
 }

@@ -10,12 +10,12 @@ export interface VideoSubtitle {
 }
 
 export interface StreamInfo {
-  episodeId: number;
+  episodeId: number | null;
   videoStatus: 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED';
-  masterUrl: string;
-  qualities: VideoQuality[];
-  subtitles: VideoSubtitle[];
-  durationSeconds: number;
+  masterUrl: string | null;
+  qualities: VideoQuality[] | null;
+  subtitles: VideoSubtitle[] | null;
+  durationSeconds: number | null;
 }
 
 export interface TranscodeProgress {

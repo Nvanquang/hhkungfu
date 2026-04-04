@@ -84,3 +84,4 @@ export const subscriptionService = {
     await api.post<ApiResponse<void>>("/subscriptions/pending/cancel");
   },
 };
+

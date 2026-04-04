@@ -58,7 +58,6 @@ export interface RatingSummaryDto {
 
 export interface UpdateProfileRequest {
   username?: string;
-  avatarUrl?: string;
   bio?: string;
 }
 

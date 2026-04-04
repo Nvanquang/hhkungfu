@@ -121,6 +121,7 @@ CREATE TABLE users (
     password    VARCHAR(255),
     username    VARCHAR(50)  NOT NULL,
     avatar_url  VARCHAR(500),
+    avatar_public_id VARCHAR(255) NULL,
     bio         TEXT,
     provider    VARCHAR(20)  NOT NULL DEFAULT 'LOCAL'
                     CHECK (provider IN ('LOCAL', 'GOOGLE')),
@@ -330,6 +331,8 @@ CREATE TABLE animes (
     description         TEXT,
     thumbnail_url       VARCHAR(500),
     banner_url          VARCHAR(500),
+    thumbnail_public_id VARCHAR(255) NULL,
+    banner_public_id    VARCHAR(255) NULL,
 
     status              VARCHAR(20)  NOT NULL DEFAULT 'UPCOMING'
                             CHECK (status IN ('ONGOING','COMPLETED','UPCOMING')),

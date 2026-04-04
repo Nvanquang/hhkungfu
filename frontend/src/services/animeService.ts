@@ -101,5 +101,19 @@ export const animeService = {
   deleteAnime: async (id: number) => {
     await api.delete(`/animes/${id}`);
   },
+
+  /** PATCH /api/v1/admin/animes/:id/image – Upload ảnh (Thumbnail/Banner) */
+  uploadAnimeImage: async (id: number, file: File, type: "THUMBNAIL" | "BANNER") => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", type);
+    
+    const response = await api.patch(`/admin/animes/${id}/image`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
 };
 

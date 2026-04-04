@@ -53,6 +53,12 @@ public class Anime {
     @Column(name = "banner_url", length = 500)
     private String bannerUrl;
 
+    @Column(name = "thumbnail_public_id", length = 255)
+    private String thumbnailPublicId;
+
+    @Column(name = "banner_public_id", length = 255)
+    private String bannerPublicId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default
@@ -100,20 +106,12 @@ public class Anime {
     private Boolean hasVipContent = false;
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "anime_genres",
-        joinColumns = @JoinColumn(name = "anime_id"),
-        inverseJoinColumns = @JoinColumn(name = "genre_id")
-    )
+    @JoinTable(name = "anime_genres", joinColumns = @JoinColumn(name = "anime_id"), inverseJoinColumns = @JoinColumn(name = "genre_id"))
     @Builder.Default
     private Set<Genre> genres = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "anime_studios",
-        joinColumns = @JoinColumn(name = "anime_id"),
-        inverseJoinColumns = @JoinColumn(name = "studio_id")
-    )
+    @JoinTable(name = "anime_studios", joinColumns = @JoinColumn(name = "anime_id"), inverseJoinColumns = @JoinColumn(name = "studio_id"))
     @Builder.Default
     private Set<Studio> studios = new HashSet<>();
 

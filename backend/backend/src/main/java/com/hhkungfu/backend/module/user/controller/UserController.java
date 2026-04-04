@@ -3,10 +3,16 @@ package com.hhkungfu.backend.module.user.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.io.IOException;
+
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -86,6 +92,18 @@ public class UserController {
         String userId = SecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new AuthException("Chưa đăng nhập", HttpStatus.UNAUTHORIZED, "UNAUTHORIZED"));
         userService.confirmChangePassword(userId, req);
+        return ResponseEntity.ok().build();
+    }
+
+    @ApiMessage("Upload avatar thành công")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @Operation(summary = "Upload avatar", description = "Upload avatar for current user")
+    @ApiResponse(responseCode = "200", description = "Avatar uploaded successfully")
+    @PatchMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> uploadAvatar(@RequestParam("file") MultipartFile file) throws IOException {
+        String userId = SecurityUtil.getCurrentUserId()
+                .orElseThrow(() -> new AuthException("Chưa đăng nhập", HttpStatus.UNAUTHORIZED, "UNAUTHORIZED"));
+        userService.uploadAvatar(userId, file);
         return ResponseEntity.ok().build();
     }
 }

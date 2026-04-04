@@ -1,23 +1,23 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuthStore } from "@/store/authStore";
-import { useUpdateProfile, useRequestChangePassword } from "@/hooks/useUser";
+import { useUpdateProfile, useRequestChangePassword, useUploadAvatar } from "@/hooks/useUser";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Shield, Crown, CreditCard, Loader2, ChevronLeft, Clock, Eye, EyeOff } from "lucide-react";
+import { User, Shield, Crown, CreditCard, Loader2, ChevronLeft, Clock, Eye, EyeOff, Camera } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const profileSchema = z.object({
   username: z.string().min(3, "Tên người dùng phải có ít nhất 3 ký tự"),
   bio: z.string().max(200, "Giới thiệu tối đa 200 ký tự").optional(),
-  avatarUrl: z.string().url("URL ảnh không hợp lệ").or(z.literal("")).optional(),
 });
 
 const passwordSchema = z.object({
@@ -33,6 +33,7 @@ export default function SettingsPage() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const updateProfile = useUpdateProfile();
+  const uploadAvatar = useUploadAvatar();
   const requestChangePassword = useRequestChangePassword();
 
   const [activeTab, setActiveTab] = useState("profile");
@@ -40,13 +41,14 @@ export default function SettingsPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const profileForm = useForm({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       username: user?.username || "",
       bio: user?.bio || "",
-      avatarUrl: user?.avatarUrl || "",
     },
   });
 
@@ -61,6 +63,17 @@ export default function SettingsPage() {
 
   const onUpdateProfile = (data: any) => {
     updateProfile.mutate(data);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Ảnh đại diện phải nhỏ hơn 2MB");
+        return;
+      }
+      uploadAvatar.mutate(file);
+    }
   };
 
   const onChangePassword = (data: any) => {
@@ -161,7 +174,7 @@ export default function SettingsPage() {
 
         {/* Desktop Tabs & Mobile Content */}
         <div className={cn(isMenuOpen && "hidden md:block")}>
-          {/* ✅ FIX: flex-col để TabsList nằm TRÊN, TabsContent nằm DƯỚI */}
+          {/* FIX: flex-col để TabsList nằm TRÊN, TabsContent nằm DƯỚI */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col gap-6">
 
             <TabsList className="hidden md:flex items-center gap-0.5 p-1.5 rounded-[13px] w-fit h-auto bg-white/5 border border-white/[0.08]">
@@ -200,16 +213,40 @@ export default function SettingsPage() {
                   <form onSubmit={profileForm.handleSubmit(onUpdateProfile)} className="space-y-6">
                     <div className="flex flex-col md:flex-row gap-8">
                       <div className="flex flex-col items-center gap-4 shrink-0">
-                        <div className="h-24 w-24 rounded-2xl border-2 border-primary/20 bg-muted overflow-hidden">
-                          {profileForm.watch("avatarUrl") ? (
-                            <img src={profileForm.watch("avatarUrl")} alt="Preview" className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-3xl font-bold bg-primary/10 text-primary">
-                              {user?.username.charAt(0).toUpperCase()}
-                            </div>
-                          )}
+                        <div className="relative group">
+                          <div className="h-24 w-24 rounded-2xl border-2 border-primary/20 bg-muted overflow-hidden relative">
+                            {uploadAvatar.isPending && (
+                              <div className="absolute inset-0 z-10 bg-black/50 flex items-center justify-center">
+                                <Loader2 className="h-6 w-6 animate-spin text-white" />
+                              </div>
+                            )}
+                            {user?.avatarUrl ? (
+                              <img src={user.avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-3xl font-bold bg-primary/10 text-primary">
+                                {user?.username.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
+                              disabled={uploadAvatar.isPending}
+                            >
+                              <Camera className="h-6 w-6 text-white" />
+                            </button>
+                          </div>
+                          
+                          <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={handleAvatarChange} 
+                            accept="image/*" 
+                            className="hidden" 
+                          />
                         </div>
-                        <p className="text-[10px] text-muted-foreground text-center max-w-[120px]">Dùng ảnh URL để đổi avatar.</p>
+                        <p className="text-[10px] text-muted-foreground text-center max-w-[120px]">Tải ảnh từ máy tính để đổi avatar.</p>
                       </div>
 
                       <div className="flex-1 space-y-4">
@@ -218,14 +255,6 @@ export default function SettingsPage() {
                           <Input id="username" {...profileForm.register("username")} />
                           {profileForm.formState.errors.username && (
                             <p className="text-xs text-destructive">{(profileForm.formState.errors.username as any).message}</p>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="avatarUrl">URL Ảnh đại diện</Label>
-                          <Input id="avatarUrl" {...profileForm.register("avatarUrl")} placeholder="https://..." />
-                          {profileForm.formState.errors.avatarUrl && (
-                            <p className="text-xs text-destructive">{(profileForm.formState.errors.avatarUrl as any).message}</p>
                           )}
                         </div>
 

@@ -39,6 +39,30 @@ export function useUpdateProfile() {
   });
 }
 
+export function useUploadAvatar() {
+  const queryClient = useQueryClient();
+  const { user, updateUser } = useAuthStore();
+
+  return useMutation({
+    mutationFn: (file: File) => userService.uploadAvatar(file),
+    onSuccess: async () => {
+      if (user) {
+        // Gọi lại api getProfile để lấy thông tin mới (bao gồm avatarUrl mới)
+        const profile = await userService.getProfile(user.id);
+        // Cập nhật lại user trong authStore để UI (Header, Settings) thay đổi ngay lập tức
+        updateUser(profile);
+        
+        queryClient.invalidateQueries({ queryKey: USER_QUERY_KEYS.profile(user.id) });
+      }
+      toast.success("Tải lên ảnh đại diện thành công");
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.message || "Tải lên ảnh đại diện thất bại";
+      toast.error(msg);
+    },
+  });
+}
+
 export function useRequestChangePassword() {
   return useMutation({
     mutationFn: (payload: ChangePasswordRequest) => userService.requestChangePassword(payload),

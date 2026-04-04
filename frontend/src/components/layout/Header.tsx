@@ -316,9 +316,13 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger render={<Button variant="ghost" className="gap-2 px-1 hover:bg-transparent" />}>
                   <div className="relative group">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold border border-primary/20 group-hover:scale-105 transition-transform">
-                      {user.username.charAt(0).toUpperCase()}
-                    </div>
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="Avatar" className="w-10 h-10 rounded-xl object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold border border-primary/20 group-hover:scale-105 transition-transform">
+                        {user.username.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                   </div>
                   <div className="hidden lg:flex flex-col items-start leading-none gap-1 ml-1">
                     <span className="text-xs font-bold truncate max-w-[80px]">{user.username}</span>

@@ -22,6 +22,16 @@ export const userService = {
     return data.data;
   },
 
+  uploadAvatar: async (file: File): Promise<void> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    await api.patch("/users/me/avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
   requestChangePassword: async (payload: ChangePasswordRequest): Promise<void> => {
     await api.post("/users/me/password-change/request", payload);
   },

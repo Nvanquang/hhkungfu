@@ -1,13 +1,17 @@
 package com.hhkungfu.backend.module.user.service;
 
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.hhkungfu.backend.common.exception.BadRequestAlertException;
 import com.hhkungfu.backend.common.exception.ErrorConstants;
 import com.hhkungfu.backend.common.exception.ResourceNotFoundException;
+import com.hhkungfu.backend.infrastructure.storage.CloudinaryService;
+
 import org.springframework.http.HttpStatus;
 import com.hhkungfu.backend.module.auth.enums.OtpType;
 import com.hhkungfu.backend.module.auth.service.OtpService;
@@ -18,10 +22,14 @@ import com.hhkungfu.backend.module.user.dto.UpdateProfileRequest;
 import com.hhkungfu.backend.module.user.dto.UserProfileDto;
 import com.hhkungfu.backend.module.user.entity.User;
 import org.springframework.data.redis.core.StringRedisTemplate;
+
+import java.io.IOException;
 import java.time.Duration;
 import com.hhkungfu.backend.module.user.enums.ProviderType;
 import com.hhkungfu.backend.module.user.repository.UserRepository;
 import com.hhkungfu.backend.module.user.repository.WatchHistoryRepository;
+
+import jakarta.persistence.EntityNotFoundException;
 
 import java.util.UUID;
 
@@ -35,6 +43,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
     private final StringRedisTemplate redisTemplate;
+    private final CloudinaryService cloudinaryService;
 
     @Transactional(readOnly = true)
     public UserProfileDto getUserProfile(String userIdStr) {
@@ -56,10 +65,6 @@ public class UserService {
             user.setUsername(request.username());
         }
 
-        if (request.avatarUrl() != null) {
-            user.setAvatarUrl(request.avatarUrl());
-        }
-
         if (request.bio() != null) {
             user.setBio(request.bio());
         }
@@ -75,7 +80,8 @@ public class UserService {
                         ErrorConstants.USER_NOT_FOUND.getCode()));
 
         if (ProviderType.GOOGLE.equals(user.getProvider())) {
-            throw new BadRequestAlertException("Tài khoản đăng ký qua Google không thể đổi mật khẩu", HttpStatus.BAD_REQUEST,
+            throw new BadRequestAlertException("Tài khoản đăng ký qua Google không thể đổi mật khẩu",
+                    HttpStatus.BAD_REQUEST,
                     ErrorConstants.OAUTH_ACCOUNT.getCode());
         }
 
@@ -117,7 +123,8 @@ public class UserService {
         String encodedPassword = redisTemplate.opsForValue().get(pendingKey);
 
         if (encodedPassword == null) {
-            throw new BadRequestAlertException("Yêu cầu đã hết hạn, vui lòng thực hiện lại từ đầu", HttpStatus.BAD_REQUEST,
+            throw new BadRequestAlertException("Yêu cầu đã hết hạn, vui lòng thực hiện lại từ đầu",
+                    HttpStatus.BAD_REQUEST,
                     ErrorConstants.OTP_EXPIRED.getCode());
         }
 
@@ -144,5 +151,21 @@ public class UserService {
                         .totalBookmarks(totalBookmarks)
                         .build())
                 .build();
+    }
+
+    // UserService
+    public void uploadAvatar(String userIdStr, MultipartFile file)
+            throws IOException {
+
+        User user = userRepository.findById(UUID.fromString(userIdStr))
+                .orElseThrow(() -> new EntityNotFoundException("User không tồn tại"));
+
+        cloudinaryService.delete(user.getAvatarPublicId());
+
+        var up = cloudinaryService.upload(file, "users/avatars");
+        user.setAvatarUrl(up.get("url"));
+        user.setAvatarPublicId(up.get("public_id"));
+
+        userRepository.save(user);
     }
 }

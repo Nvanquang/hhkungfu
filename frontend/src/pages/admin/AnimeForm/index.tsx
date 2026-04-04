@@ -11,7 +11,6 @@ import type { CreateAnimeRequest, Genre, Studio, AnimeDetail } from "@/types/ani
 import { BasicInfoSection } from "./components/BasicInfoSection";
 import { PublishingSection } from "./components/PublishingSection";
 import { GenreStudioSection } from "./components/GenreStudioSection";
-import { MediaSection } from "./components/MediaSection";
 import { RatingsSettingsSection } from "./components/RatingsSettingsSection";
 
 type FormValues = Omit<CreateAnimeRequest, "genreIds" | "studioIds" | "titleOther"> & {
@@ -230,8 +229,6 @@ export default function AnimeFormPage() {
 
         {/* Right Column: Media and Settings */}
         <div className="space-y-6 lg:sticky lg:top-24 self-start">
-          <MediaSection register={register} watch={watch} />
-          
           <RatingsSettingsSection register={register} watch={watch} setValue={setValue} />
           
           <LightPanel className="bg-slate-900 border-slate-800 py-4 px-6">

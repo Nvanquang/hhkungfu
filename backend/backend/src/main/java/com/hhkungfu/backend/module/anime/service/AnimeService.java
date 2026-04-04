@@ -12,6 +12,7 @@ import com.hhkungfu.backend.module.anime.dto.request.UpdateAnimeRequest;
 import com.hhkungfu.backend.module.anime.entity.Anime;
 import com.hhkungfu.backend.module.anime.entity.Genre;
 import com.hhkungfu.backend.module.anime.entity.Studio;
+import com.hhkungfu.backend.module.anime.enums.AnimeImageType;
 import com.hhkungfu.backend.module.anime.mapper.AnimeMapper;
 import com.hhkungfu.backend.module.anime.repository.AnimeRepository;
 import com.hhkungfu.backend.module.anime.repository.GenreRepository;
@@ -19,6 +20,7 @@ import com.hhkungfu.backend.module.anime.repository.StudioRepository;
 import com.hhkungfu.backend.module.anime.repository.projection.AnimeRecentUpdateProjection;
 import com.hhkungfu.backend.module.interaction.service.BookmarkService;
 import com.hhkungfu.backend.common.util.SecurityUtil;
+import com.hhkungfu.backend.infrastructure.storage.CloudinaryService;
 
 import jakarta.persistence.criteria.Join;
 
@@ -34,7 +36,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -50,6 +54,7 @@ public class AnimeService {
     private final StudioRepository studioRepository;
     private final BookmarkService bookmarkService;
     private final AnimeMapper animeMapper;
+    private final CloudinaryService cloudinaryService;
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
@@ -381,5 +386,32 @@ public class AnimeService {
             java.util.Set<Long> bookmarkedIds = bookmarkService.getBookmarkedAnimeIds(userId);
             dto.setIsBookmarked(bookmarkedIds.contains(dto.getId()));
         });
+    }
+
+    // AnimeService
+    public String uploadImage(Long id, MultipartFile file, AnimeImageType type)
+            throws IOException {
+
+        Anime anime = animeRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Anime not found", "ANIME",
+                        ErrorConstants.ANIME_NOT_FOUND.getCode()));
+
+        switch (type) {
+            case THUMBNAIL -> {
+                cloudinaryService.delete(anime.getThumbnailPublicId());
+                var up = cloudinaryService.upload(file, "animes/thumbnails");
+                anime.setThumbnailUrl(up.get("url"));
+                anime.setThumbnailPublicId(up.get("public_id"));
+            }
+            case BANNER -> {
+                cloudinaryService.delete(anime.getBannerPublicId());
+                var up = cloudinaryService.upload(file, "animes/banners");
+                anime.setBannerUrl(up.get("url"));
+                anime.setBannerPublicId(up.get("public_id"));
+            }
+        }
+
+        animeRepository.save(anime);
+        return type == AnimeImageType.THUMBNAIL ? anime.getThumbnailUrl() : anime.getBannerUrl();
     }
 }

@@ -9,6 +9,8 @@ import { Button } from "@/components/ui";
 import { LightPanel, AdminPageHeader, AnimateNumber } from "@/pages/admin/shared/components";
 import { AnimeFilters } from "./components/AnimeFilters";
 import { AnimeTable } from "./components/AnimeTable";
+import { ImageUploadDialog } from "./components/ImageUploadDialog";
+import { DeleteAnimeDialog } from "./components/DeleteAnimeDialog";
 
 const PAGE_SIZE = 20;
 
@@ -19,6 +21,8 @@ export default function AnimeListPage() {
   const [key, setKey] = useState("");
   const [status, setStatus] = useState<AnimeStatus | "">("");
   const [type, setType] = useState<AnimeType | "">("");
+  const [selectedAnimeForUpload, setSelectedAnimeForUpload] = useState<AnimeSummary | null>(null);
+  const [animeToDelete, setAnimeToDelete] = useState<AnimeSummary | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "animes", page, key, status, type],
@@ -52,6 +56,26 @@ export default function AnimeListPage() {
       });
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => animeService.deleteAnime(id),
+    onSuccess: () => {
+      toast.success("Đã xóa anime thành công");
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "animes"],
+      });
+      setAnimeToDelete(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Lỗi khi xóa anime");
+    },
+  });
+
+  const handleDelete = () => {
+    if (animeToDelete) {
+      deleteMutation.mutate(animeToDelete.id);
+    }
+  };
 
   const handleResetFilter = () => {
     setPage(1);
@@ -110,7 +134,26 @@ export default function AnimeListPage() {
             <AnimeTable
               items={items}
               onToggleFeatured={handleToggleFeatured}
+              onOpenImageUpload={setSelectedAnimeForUpload}
+              onDelete={setAnimeToDelete}
               isFeaturedPending={featuredMutation.isPending}
+            />
+
+            <ImageUploadDialog
+              anime={selectedAnimeForUpload}
+              onClose={() => setSelectedAnimeForUpload(null)}
+              onSuccess={() => {
+                queryClient.invalidateQueries({
+                  queryKey: ["admin", "animes"],
+                });
+              }}
+            />
+
+            <DeleteAnimeDialog
+              anime={animeToDelete}
+              onClose={() => setAnimeToDelete(null)}
+              onConfirm={handleDelete}
+              isLoading={deleteMutation.isPending}
             />
 
             {items.length === 0 && (

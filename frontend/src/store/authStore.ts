@@ -1,72 +1,90 @@
 import { create } from "zustand";
-
-import type { UserDto } from "@/types/user.types";
-import { authService } from "@/services/authService";
+import type { AuthUser } from "@/types/auth.types";
 
 interface AuthState {
-  user: UserDto | null;
+  // ── State ──────────────────────────────────────────────────────────────────
+  user: AuthUser | null;
+  /** Access token lives ONLY in memory — never in localStorage/sessionStorage */
   accessToken: string | null;
-  isLoggedIn: boolean;
-  isLoading: boolean;
+  isAuthenticated: boolean;
+  /** True while the initial bootstrap (refresh → /me) is running */
+  isBootstrapping: boolean;
+  /** Derived from user.role; expands naturally when backend sends roles[] */
+  roles: string[];
+  permissions: string[];
 
-  setAuth: (user: UserDto, accessToken: string) => void;
-  setToken: (accessToken: string) => void;
-  logout: (callApi?: boolean) => Promise<void>;
-  updateUser: (user: Partial<UserDto>) => void;
-  setLoading: (loading: boolean) => void;
+  // ── Actions ────────────────────────────────────────────────────────────────
+  setToken: (token: string) => void;
+  setUser: (user: AuthUser) => void;
+  setBootstrapping: (value: boolean) => void;
+  /** Full reset — called on logout or bootstrap failure */
+  clearAuth: () => void;
+  /** Shallow-merge a partial user (e.g. after profile update) */
+  updateUser: (data: Partial<AuthUser>) => void;
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => {
-  // Setup BroadcastChannel for tab synchronization
-  const authChannel = new BroadcastChannel("auth_sync");
+  // BroadcastChannel: sync logout signal across browser tabs.
+  // NOTE: this listener clears LOCAL Zustand state only.
+  // React Query cache is cleared by the channel handler in useAuthInit.
+  const authChannel = new BroadcastChannel("auth");
 
-  authChannel.onmessage = (event) => {
+  authChannel.onmessage = (event: MessageEvent<string>) => {
     if (event.data === "logout") {
-      set({ user: null, accessToken: null, isLoggedIn: false });
-    } else if (event.data === "login") {
-      // You could trigger a fetch of /auth/me here if necessary,
-      // but usually just forcing a reload or clearing state is enough
-      // to let the app naturally refetch the user on mount if needed.
+      set({
+        user: null,
+        accessToken: null,
+        isAuthenticated: false,
+        roles: [],
+        permissions: [],
+      });
     }
+    // "login" events from other tabs are intentionally ignored —
+    // each tab bootstraps independently via its HttpOnly cookie.
   };
 
   return {
+    // initial state — isBootstrapping starts true so ProtectedRoute/AuthGuard
+    // renders a spinner immediately without a flash of "not authenticated"
     user: null,
     accessToken: null,
-    isLoggedIn: false,
-    isLoading: true, // Initially true to allow for `/auth/me` on mount
+    isAuthenticated: false,
+    isBootstrapping: true,
+    roles: [],
+    permissions: [],
 
-    setAuth: (user, accessToken) => {
-      set({ user, accessToken, isLoggedIn: true, isLoading: false });
-      authChannel.postMessage("login");
-    },
+    setToken: (token) => set({ accessToken: token }),
 
-    setToken: (accessToken) => set({ accessToken }),
+    setUser: (user) =>
+      set({
+        user,
+        isAuthenticated: true,
+        // Derive roles from UserDto.role (single string today).
+        // Extend here if the backend starts sending a roles[] array.
+        roles: [user.role],
+        permissions: [],
+      }),
 
-    logout: async (callApi = true) => {
-      // If already logged out, do nothing
-      if (!get().isLoggedIn && !get().accessToken) return;
+    setBootstrapping: (value) => set({ isBootstrapping: value }),
 
-      // Clear state immediately for best UX
-      set({ user: null, accessToken: null, isLoggedIn: false, isLoading: false });
+    clearAuth: () => {
+      set({
+        user: null,
+        accessToken: null,
+        isAuthenticated: false,
+        roles: [],
+        permissions: [],
+      });
+      // Broadcast logout to all other tabs
       authChannel.postMessage("logout");
-      
-      if (callApi) {
-        try {
-          await authService.logoutApi();
-        } catch (error) {
-          console.error("Logout API failed:", error);
-        }
-      }
     },
 
     updateUser: (data) => {
-      const currentUser = get().user;
-      if (currentUser) {
-        set({ user: { ...currentUser, ...data } });
+      const current = get().user;
+      if (current) {
+        const updated = { ...current, ...data };
+        set({ user: updated, roles: [updated.role] });
       }
     },
-
-    setLoading: (isLoading) => set({ isLoading }),
   };
 });

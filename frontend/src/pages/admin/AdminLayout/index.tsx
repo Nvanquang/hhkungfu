@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
+import { useLogout } from "@/hooks/useLogout";
 import { ADMIN_NAV_ITEMS } from "@/pages/admin/shared/constants/navigation";
 import { Sidebar } from "@/pages/admin/AdminLayout/components/Sidebar";
 import { MobileHeader } from "@/pages/admin/AdminLayout/components/MobileHeader";
@@ -9,7 +10,8 @@ import { MobileNav } from "@/pages/admin/AdminLayout/components/MobileNav";
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
+  const logout = useLogout();
   const location = useLocation();
 
   const pageTitle = useMemo(() => {
@@ -30,7 +32,7 @@ export default function AdminLayout() {
         {/* Desktop Sidebar */}
         <Sidebar 
           user={user} 
-          logout={(all) => logout(!!all)} 
+          logout={() => logout()} 
           isCollapsed={isCollapsed}
           setIsCollapsed={setIsCollapsed}
         />

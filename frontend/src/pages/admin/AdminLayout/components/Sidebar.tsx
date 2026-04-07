@@ -7,7 +7,7 @@ import type { UserDto } from "@/types";
 
 interface SidebarProps {
   user: UserDto | null;
-  logout: (all?: boolean) => Promise<void>;
+  logout: () => void | Promise<void>;
   isCollapsed: boolean;
   setIsCollapsed: (v: boolean) => void;
 }
@@ -107,7 +107,7 @@ export function Sidebar({ user, logout, isCollapsed, setIsCollapsed }: SidebarPr
               type="button"
               variant="outline"
               className="w-full border-slate-300 bg-white text-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors"
-              onClick={() => logout(true)}
+            onClick={() => logout()}
             >
               <LogOut className="mr-2 h-4 w-4" />
               Đăng xuất
@@ -115,7 +115,7 @@ export function Sidebar({ user, logout, isCollapsed, setIsCollapsed }: SidebarPr
           </>
         ) : (
           <button
-            onClick={() => logout(true)}
+            onClick={() => logout()}
             className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
             title="Đăng xuất"
           >

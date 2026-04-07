@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { subscriptionService } from "@/services/subscriptionService";
 import { SUBSCRIPTION_KEYS } from "@/pages/Vip/VipPlans/hooks/useVipPlans";
 import { webSocketService } from "@/services/websocketService";
+import { useAuthStore } from "@/store/authStore";
+import type { PaymentResultDto } from "@/types/subscription.types";
 
 export function usePaymentResult() {
   const [searchParams] = useSearchParams();
@@ -11,6 +13,7 @@ export function usePaymentResult() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const queryClient = useQueryClient();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const queryKey = SUBSCRIPTION_KEYS.result(orderCode);
 
@@ -46,17 +49,21 @@ export function usePaymentResult() {
     if (!orderCode) return;
     if (query.data && query.data.status !== "PENDING") return;
 
-    webSocketService.connect();
+    if (!isAuthenticated) return;
+    
+    // webSocketService.connect() is now handled globally. 
+    // We just ensure we are authenticated before subscribing.
     
     // Subscribe to payment topic
     const unsubscribe = webSocketService.subscribePayment(orderCode, (message) => {
-      console.log("[Payment WS] Received update:", message);
-      if (message && message.status) {
+      const data = message as PaymentResultDto;
+      console.log("[Payment WS] Received update:", data);
+      if (data && data.status) {
         // Update query data immediately for fast UI feedback
         queryClient.setQueryData(queryKey, (oldData: any) => ({
           ...(oldData || {}),
-          status: message.status,
-          planName: message.planName || oldData?.planName
+          status: data.status,
+          planName: data.planName || oldData?.planName
         }));
         
         // Force refetch to sync full data from backend
@@ -67,7 +74,7 @@ export function usePaymentResult() {
     return () => {
       unsubscribe();
     };
-  }, [orderCode, queryKey, queryClient, query.data?.status]);
+  }, [orderCode, queryKey, queryClient, query.data?.status, isAuthenticated]);
 
   return { orderCode, result: query.data, isLoading: query.isLoading, isError: query.isError };
 }

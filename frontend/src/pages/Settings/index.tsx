@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useAuthStore } from "@/store/authStore";
+import { useLogout } from "@/hooks/useLogout";
 import { useUpdateProfile, useRequestChangePassword, useUploadAvatar } from "@/hooks/useUser";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,8 @@ const passwordSchema = z.object({
 });
 
 export default function SettingsPage() {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
+  const logout = useLogout();
   const navigate = useNavigate();
   const updateProfile = useUpdateProfile();
   const uploadAvatar = useUploadAvatar();
@@ -90,8 +92,8 @@ export default function SettingsPage() {
     );
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 

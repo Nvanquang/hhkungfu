@@ -7,7 +7,7 @@ export function useWatchProgress(
   episodeId: number | null | undefined,
   videoRef: React.RefObject<HTMLVideoElement | null>
 ) {
-  const { isLoggedIn } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const hasFiredView = useRef(false);
   const lastSavedTimeRef = useRef<number>(0);
   const seekTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -18,7 +18,7 @@ export function useWatchProgress(
   });
 
   const saveToBackend = useCallback((time: number, force: boolean = false) => {
-    if (!episodeId || !isLoggedIn) return;
+    if (!episodeId || !isAuthenticated) return;
 
     // Only save if it's a significant change (> 5s) or forced (pause/exit)
     if (!force && Math.abs(time - lastSavedTimeRef.current) < 5) return;
@@ -36,7 +36,7 @@ export function useWatchProgress(
     lastSavedTimeRef.current = time;
     // Local backup
     localStorage.setItem(`progress_${episodeId}`, String(Math.floor(time)));
-  }, [episodeId, isLoggedIn, videoRef, progressMutation]);
+  }, [episodeId, isAuthenticated, videoRef, progressMutation]);
 
   // COMBINED LOGIC: 15s View Count + 10s Interval Progress
   useEffect(() => {
@@ -55,18 +55,18 @@ export function useWatchProgress(
       }
 
       // 2. Periodic Progress Save (every 15s)
-      if (isLoggedIn && document.visibilityState === "visible") {
+      if (isAuthenticated && document.visibilityState === "visible") {
         saveToBackend(currentTime);
       }
     }, 15_000);
 
     return () => clearInterval(interval);
-  }, [episodeId, isLoggedIn, saveToBackend]);
+  }, [episodeId, isAuthenticated, saveToBackend]);
 
   // EVENT-DRIVEN SAVES: Pause, Seeked, BeforeUnload
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !episodeId || !isLoggedIn) return;
+    if (!video || !episodeId || !isAuthenticated) return;
 
     const onPause = () => saveToBackend(video.currentTime, true);
 
@@ -90,7 +90,7 @@ export function useWatchProgress(
       window.removeEventListener("beforeunload", onBeforeUnload);
       if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current);
     };
-  }, [episodeId, isLoggedIn, saveToBackend]);
+  }, [episodeId, isAuthenticated, saveToBackend]);
 
   // Restore from local backup on mount
   useEffect(() => {

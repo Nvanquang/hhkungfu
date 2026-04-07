@@ -3,7 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { ProtectedRoute } from "@/components/router/ProtectedRoute";
+import { AuthGuard } from "@/components/AuthGuard";
+import { RoleGuard } from "@/components/RoleGuard";
 import { useAuthInit } from "@/hooks/useAuthInit";
 
 // Lazy load auth pages
@@ -64,8 +65,8 @@ function AppContent() {
             {/* Public Profile */}
             <Route path="/profile/:userId" element={<Profile />} />
 
-            {/* Protected Routes Example */}
-            <Route element={<ProtectedRoute />}>
+            {/* Protected Routes */}
+            <Route element={<AuthGuard />}>
               <Route path="/dashboard" element={<div className="p-8">Protected Dashboard</div>} />
               <Route path="/me/history" element={<History />} />
               <Route path="/me/payments" element={<PaymentHistory />} />
@@ -80,21 +81,23 @@ function AppContent() {
             <Route path="/vip/result" element={<PaymentResult />} />
           </Route>
 
-          {/* Admin routes must not use client MainLayout */}
-          <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="animes" element={<AdminAnimeList />} />
-              <Route path="animes/new" element={<AdminAnimeForm />} />
-              <Route path="animes/:id/edit" element={<AdminAnimeForm />} />
-              <Route path="animes/:id/episodes" element={<AdminEpisodeManager />} />
-              <Route path="animes/:id/episodes/new" element={<AdminEpisodeManager />} />
-              <Route path="upload/:episodeId" element={<AdminVideoUpload />} />
-              <Route path="genres-studios" element={<AdminGenreStudio />} />
-              <Route path="users" element={<AdminUserList />} />
-              <Route path="comments" element={<AdminCommentModeration />} />
-              <Route path="subscriptions" element={<AdminSubscriptionManager />} />
-              <Route path="analytics" element={<AdminAnalytics />} />
+          {/* Admin routes: must be authenticated AND have ADMIN role */}
+          <Route element={<AuthGuard />}>
+            <Route element={<RoleGuard allowedRoles={["ADMIN"]} asOutlet />}>
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="animes" element={<AdminAnimeList />} />
+                <Route path="animes/new" element={<AdminAnimeForm />} />
+                <Route path="animes/:id/edit" element={<AdminAnimeForm />} />
+                <Route path="animes/:id/episodes" element={<AdminEpisodeManager />} />
+                <Route path="animes/:id/episodes/new" element={<AdminEpisodeManager />} />
+                <Route path="upload/:episodeId" element={<AdminVideoUpload />} />
+                <Route path="genres-studios" element={<AdminGenreStudio />} />
+                <Route path="users" element={<AdminUserList />} />
+                <Route path="comments" element={<AdminCommentModeration />} />
+                <Route path="subscriptions" element={<AdminSubscriptionManager />} />
+                <Route path="analytics" element={<AdminAnalytics />} />
+              </Route>
             </Route>
           </Route>
 

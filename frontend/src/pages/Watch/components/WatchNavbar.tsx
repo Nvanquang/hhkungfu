@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight, User, LogOut, Settings, Clock, Bookmark, Crown } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useLogout } from "@/hooks/useLogout";
 import {
   Button,
   DropdownMenu,
@@ -18,11 +19,12 @@ interface WatchNavbarProps {
 }
 
 export function WatchNavbar({ animeTitle, animeSlug, episodeTitle, episodeNumber }: WatchNavbarProps) {
-  const { user, isLoggedIn, logout } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const logout = useLogout();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 
@@ -62,7 +64,7 @@ export function WatchNavbar({ animeTitle, animeSlug, episodeTitle, episodeNumber
 
       {/* Right: user avatar with dropdown */}
       <div className="flex-shrink-0 flex items-center gap-2">
-        {isLoggedIn && user ? (
+        {isAuthenticated && user ? (
           <DropdownMenu>
             <DropdownMenuTrigger render={
               <Button 

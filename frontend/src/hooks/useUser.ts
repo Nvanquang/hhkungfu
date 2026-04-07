@@ -1,18 +1,51 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "@/services/userService";
+import { authService } from "@/services/authService";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
-import type { UpdateProfileRequest, ChangePasswordRequest, ConfirmChangePasswordRequest } from "@/types/user.types";
+import type {
+  UpdateProfileRequest,
+  ChangePasswordRequest,
+  ConfirmChangePasswordRequest,
+} from "@/types/user.types";
 
+// ── Query key factory ──────────────────────────────────────────────────────
 export const USER_QUERY_KEYS = {
-  profile: (id: string) => ["profile", id],
-  history: (page: number) => ["history", page],
-  animeHistory: (animeId: number) => ["history", "anime", animeId],
-  bookmarks: (page: number) => ["bookmarks", page],
-  bookmarkStatus: (animeId: number) => ["bookmarks", "status", animeId],
-  ratingSummary: (animeId: number) => ["ratings", "summary", animeId],
-  myRating: (animeId: number) => ["ratings", "me", animeId],
+  currentUser: ["currentUser"] as const,
+  profile: (id: string) => ["profile", id] as const,
+  history: (page: number) => ["history", page] as const,
+  animeHistory: (animeId: number) => ["history", "anime", animeId] as const,
+  bookmarks: (page: number) => ["bookmarks", page] as const,
+  bookmarkStatus: (animeId: number) =>
+    ["bookmarks", "status", animeId] as const,
+  ratingSummary: (animeId: number) =>
+    ["ratings", "summary", animeId] as const,
+  myRating: (animeId: number) => ["ratings", "me", animeId] as const,
 } as const;
+
+// ── Current authenticated user ─────────────────────────────────────────────
+
+/**
+ * Fetch GET /auth/me and cache under ['currentUser'].
+ *
+ * • Only enabled when isAuthenticated === true (avoids a 401 on public pages).
+ * • retry: false — the apiClient interceptor already handles 401 → refresh;
+ *   we don't want React Query to re-attempt on top of that.
+ * • staleTime: 5 minutes — user data is not time-sensitive.
+ */
+export function useCurrentUser() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  return useQuery({
+    queryKey: USER_QUERY_KEYS.currentUser,
+    queryFn: authService.getCurrentUser,
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1_000, // 5 minutes
+    retry: false,
+  });
+}
+
+// ── User profile ───────────────────────────────────────────────────────────
 
 export function useProfile(id: string) {
   return useQuery({
@@ -27,10 +60,17 @@ export function useUpdateProfile() {
   const { updateUser } = useAuthStore();
 
   return useMutation({
-    mutationFn: (payload: UpdateProfileRequest) => userService.updateProfile(payload),
+    mutationFn: (payload: UpdateProfileRequest) =>
+      userService.updateProfile(payload),
     onSuccess: (data) => {
       updateUser(data);
-      queryClient.invalidateQueries({ queryKey: USER_QUERY_KEYS.profile(data.id) });
+      queryClient.invalidateQueries({
+        queryKey: USER_QUERY_KEYS.profile(data.id),
+      });
+      // Keep the currentUser cache fresh after a profile update
+      queryClient.invalidateQueries({
+        queryKey: USER_QUERY_KEYS.currentUser,
+      });
       toast.success("Cập nhật hồ sơ thành công");
     },
     onError: () => {
@@ -47,30 +87,40 @@ export function useUploadAvatar() {
     mutationFn: (file: File) => userService.uploadAvatar(file),
     onSuccess: async () => {
       if (user) {
-        // Gọi lại api getProfile để lấy thông tin mới (bao gồm avatarUrl mới)
+        // Re-fetch full profile to get the new avatarUrl
         const profile = await userService.getProfile(user.id);
-        // Cập nhật lại user trong authStore để UI (Header, Settings) thay đổi ngay lập tức
         updateUser(profile);
-        
-        queryClient.invalidateQueries({ queryKey: USER_QUERY_KEYS.profile(user.id) });
+        queryClient.invalidateQueries({
+          queryKey: USER_QUERY_KEYS.profile(user.id),
+        });
+        queryClient.invalidateQueries({
+          queryKey: USER_QUERY_KEYS.currentUser,
+        });
       }
       toast.success("Tải lên ảnh đại diện thành công");
     },
-    onError: (error: any) => {
-      const msg = error.response?.data?.message || "Tải lên ảnh đại diện thất bại";
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      const msg =
+        error.response?.data?.message ?? "Tải lên ảnh đại diện thất bại";
       toast.error(msg);
     },
   });
 }
 
+// ── Password ───────────────────────────────────────────────────────────────
+
 export function useRequestChangePassword() {
   return useMutation({
-    mutationFn: (payload: ChangePasswordRequest) => userService.requestChangePassword(payload),
+    mutationFn: (payload: ChangePasswordRequest) =>
+      userService.requestChangePassword(payload),
     onSuccess: () => {
       toast.success("Yêu cầu thành công. Vui lòng kiểm tra email.");
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.error?.message || "Yêu cầu thất bại";
+    onError: (error: {
+      response?: { data?: { error?: { message?: string } } };
+    }) => {
+      const message =
+        error.response?.data?.error?.message ?? "Yêu cầu thất bại";
       toast.error(message);
     },
   });
@@ -78,16 +128,22 @@ export function useRequestChangePassword() {
 
 export function useConfirmChangePassword() {
   return useMutation({
-    mutationFn: (payload: ConfirmChangePasswordRequest) => userService.confirmChangePassword(payload),
+    mutationFn: (payload: ConfirmChangePasswordRequest) =>
+      userService.confirmChangePassword(payload),
     onSuccess: () => {
       toast.success("Đổi mật khẩu thành công");
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.error?.message || "Xác nhận thất bại";
+    onError: (error: {
+      response?: { data?: { error?: { message?: string } } };
+    }) => {
+      const message =
+        error.response?.data?.error?.message ?? "Xác nhận thất bại";
       toast.error(message);
     },
   });
 }
+
+// ── Watch history & bookmarks ──────────────────────────────────────────────
 
 export function useWatchHistory(page = 1) {
   return useQuery({
@@ -104,40 +160,63 @@ export function useBookmarks(page = 1) {
 }
 
 export function useBookmarkStatus(animeId: number) {
-  const { isLoggedIn } = useAuthStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: USER_QUERY_KEYS.bookmarkStatus(animeId),
     queryFn: () => userService.getBookmarkStatus(animeId),
-    enabled: isLoggedIn && !!animeId,
+    enabled: isAuthenticated && !!animeId,
+    retry: false, // interceptor handles 401 → no double retry
   });
 }
 
 export function useToggleBookmark(animeId: number) {
   const queryClient = useQueryClient();
-  const { isLoggedIn } = useAuthStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return useMutation({
     mutationFn: (isBookmarked: boolean) =>
-      isBookmarked ? userService.removeBookmark(animeId) : userService.addBookmark(animeId),
+      isBookmarked
+        ? userService.removeBookmark(animeId)
+        : userService.addBookmark(animeId),
     onMutate: async (isBookmarked) => {
-      if (!isLoggedIn) {
+      if (!isAuthenticated) {
         toast.error("Vui lòng đăng nhập để thực hiện hành động này");
         throw new Error("Unauthorized");
       }
-      await queryClient.cancelQueries({ queryKey: USER_QUERY_KEYS.bookmarkStatus(animeId) });
-      const previousStatus = queryClient.getQueryData(USER_QUERY_KEYS.bookmarkStatus(animeId));
-      queryClient.setQueryData(USER_QUERY_KEYS.bookmarkStatus(animeId), !isBookmarked);
+      await queryClient.cancelQueries({
+        queryKey: USER_QUERY_KEYS.bookmarkStatus(animeId),
+      });
+      const previousStatus = queryClient.getQueryData(
+        USER_QUERY_KEYS.bookmarkStatus(animeId)
+      );
+      // Optimistic update
+      queryClient.setQueryData(
+        USER_QUERY_KEYS.bookmarkStatus(animeId),
+        !isBookmarked
+      );
       return { previousStatus };
     },
-    onError: (_err, _newStatus, context: any) => {
-      queryClient.setQueryData(USER_QUERY_KEYS.bookmarkStatus(animeId), context?.previousStatus);
+    onError: (
+      _err,
+      _newStatus,
+      context: { previousStatus: unknown } | undefined
+    ) => {
+      // Roll back optimistic update on failure
+      queryClient.setQueryData(
+        USER_QUERY_KEYS.bookmarkStatus(animeId),
+        context?.previousStatus
+      );
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: USER_QUERY_KEYS.bookmarkStatus(animeId) });
+      queryClient.invalidateQueries({
+        queryKey: USER_QUERY_KEYS.bookmarkStatus(animeId),
+      });
       queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
     },
   });
 }
+
+// ── Ratings ────────────────────────────────────────────────────────────────
 
 export function useRatingSummary(animeId: number) {
   return useQuery({
@@ -148,11 +227,12 @@ export function useRatingSummary(animeId: number) {
 }
 
 export function useMyRating(animeId: number) {
-  const { isLoggedIn } = useAuthStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: USER_QUERY_KEYS.myRating(animeId),
     queryFn: () => userService.getMyRating(animeId),
-    enabled: isLoggedIn && !!animeId,
+    enabled: isAuthenticated && !!animeId,
+    retry: false,
   });
 }
 
@@ -161,8 +241,12 @@ export function useRateAnime(animeId: number) {
   return useMutation({
     mutationFn: (score: number) => userService.rateAnime(animeId, score),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: USER_QUERY_KEYS.ratingSummary(animeId) });
-      queryClient.invalidateQueries({ queryKey: USER_QUERY_KEYS.myRating(animeId) });
+      queryClient.invalidateQueries({
+        queryKey: USER_QUERY_KEYS.ratingSummary(animeId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: USER_QUERY_KEYS.myRating(animeId),
+      });
       toast.success("Đánh giá thành công");
     },
   });

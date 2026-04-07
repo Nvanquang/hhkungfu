@@ -25,7 +25,7 @@ export function CommentInput({
 }: CommentInputProps) {
   const [content, setContent] = useState(initialValue);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, isLoggedIn } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -45,7 +45,7 @@ export function CommentInput({
   };
 
   const handleSubmit = async () => {
-    if (!isLoggedIn) {
+    if (!isAuthenticated) {
       navigate("/login");
       return;
     }
@@ -74,7 +74,7 @@ export function CommentInput({
   return (
     <div className={cn("flex gap-3", isReply && "mt-3")}>
       <div className="shrink-0">
-        {isLoggedIn && user ? (
+        {isAuthenticated && user ? (
           <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border border-border/50">
             {user.avatarUrl ? (
               <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
@@ -97,17 +97,17 @@ export function CommentInput({
           value={content}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
-          placeholder={isLoggedIn ? placeholder : "Đăng nhập để bình luận"}
-          readOnly={!isLoggedIn}
-          onClick={() => !isLoggedIn && navigate("/login")}
+          placeholder={isAuthenticated ? placeholder : "Đăng nhập để bình luận"}
+          readOnly={!isAuthenticated}
+          onClick={() => !isAuthenticated && navigate("/login")}
           rows={1}
           className={cn(
             "w-full bg-muted/30 border border-border/50 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 transition-all resize-none min-h-[40px] max-h-[300px]",
-            !isLoggedIn && "cursor-pointer hover:bg-muted/50"
+            !isAuthenticated && "cursor-pointer hover:bg-muted/50"
           )}
         />
         
-        {isLoggedIn && (content.trim() || initialValue) && (
+        {isAuthenticated && (content.trim() || initialValue) && (
           <div className="flex justify-end gap-2 items-center">
             <span className="text-[10px] text-muted-foreground hidden md:block">
               Ctrl + Enter để gửi

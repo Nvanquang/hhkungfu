@@ -18,21 +18,21 @@ export function useVipPlans() {
 }
 
 export function useMySubscription() {
-  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   return useQuery({
     queryKey: SUBSCRIPTION_KEYS.me(),
     queryFn: subscriptionService.getMe,
-    enabled: isLoggedIn,
+    enabled: isAuthenticated,
     staleTime: 2 * 60 * 1000,
   });
 }
 
 export function usePendingPayment() {
-  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   return useQuery({
     queryKey: SUBSCRIPTION_KEYS.pending(),
     queryFn: subscriptionService.getPendingPayment,
-    enabled: isLoggedIn,
+    enabled: isAuthenticated,
     retry: false,
   });
 }

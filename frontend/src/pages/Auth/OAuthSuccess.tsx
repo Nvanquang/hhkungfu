@@ -21,19 +21,19 @@ export default function OAuthSuccess() {
       try {
         // Set access token so subsequent calls include Authorization header
         useAuthStore.getState().setToken(token);
-        const user = await authService.getMe();
-        useAuthStore.getState().setAuth(user, token);
+        const user = await authService.getCurrentUser();
+        useAuthStore.getState().setUser(user);
         
         const destination = user.role === "ADMIN" ? "/admin" : "/";
         navigate(destination, { replace: true });
       } catch {
-        useAuthStore.getState().logout();
+        useAuthStore.getState().clearAuth();
         navigate("/login", { replace: true });
       }
     };
 
     void bootstrap();
-  }, [location.search, navigate]);
+  }, [location.hash, navigate]);
 
   return (
     <div className="p-8 text-center text-sm text-muted-foreground">

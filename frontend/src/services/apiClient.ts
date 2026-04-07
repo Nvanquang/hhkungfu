@@ -1,153 +1,165 @@
-import axios, { AxiosError } from "axios";
+import axios, {
+  type AxiosError,
+  type InternalAxiosRequestConfig,
+} from "axios";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
+import {
+  isRefreshing,
+  setRefreshing,
+  processQueue,
+  enqueue,
+} from "./refreshQueue";
+import { scheduleRefresh } from "./tokenService";
 
+/**
+ * Perform a silent refresh by exchanging the HttpOnly cookie for a new JWT.
+ * Updates the store, schedules the next proactive refresh, and syncs WebSockets.
+ *
+ * This function handles its own errors by logging out the user if the refresh
+ * token is invalid/expired.
+ */
+export async function triggerSilentRefresh(): Promise<string> {
+  try {
+    // 1. Exchange cookie for new token using raw axios to bypass interceptors
+    const response = await axios.post<{ data: { accessToken: string } }>(
+      `${api.defaults.baseURL}/auth/refresh`,
+      undefined,
+      { withCredentials: true }
+    );
+
+    const newToken = response.data?.data?.accessToken;
+    if (!newToken) throw new Error("Missing token in refresh response");
+
+    // 2. Update memory state
+    useAuthStore.getState().setToken(newToken);
+
+    // 3. Schedule the NEXT proactive refresh (recursively)
+    scheduleRefresh(newToken, () => {
+      void triggerSilentRefresh();
+    });
+
+    // 4. Hot-swap WebSocket token
+    const { webSocketService } = await import("./websocketService");
+    webSocketService.reconnectOnTokenRefresh(newToken);
+
+    return newToken;
+  } catch (error) {
+    // If refresh fails, the session is dead. Clean up and notify user.
+    const { webSocketService } = await import("./websocketService");
+    webSocketService.disconnectAndClear();
+    useAuthStore.getState().clearAuth();
+
+    // Only notify if we were previously logged in (to avoid spamming guests)
+    if (useAuthStore.getState().isAuthenticated) {
+      toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+    }
+    throw error;
+  }
+}
+
+// ── URLs that must bypass the 401-refresh retry ────────────────────────────
+const SKIP_REFRESH_URLS = ["/auth/refresh", "/auth/login"];
+
+// ── Axios instance ─────────────────────────────────────────────────────────
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "/api/v1",
   headers: { "Content-Type": "application/json" },
-  withCredentials: true, // Send HttpOnly cookies automatically
+  withCredentials: true, // auto-send HttpOnly refresh-token cookie
 });
 
-// Request queueing mechanism for concurrent 401s
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (token: string) => void;
-  reject: (err: unknown) => void;
-}> = [];
-
-const processQueue = (error: unknown, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token as string);
-    }
-  });
-  failedQueue = [];
-};
-
-const isTokenExpired = (token: string) => {
-  try {
-    const payloadBase64 = token.split(".")[1];
-    const decodedJson = atob(payloadBase64);
-    const decoded = JSON.parse(decodedJson);
-    const currentTime = Date.now() / 1000;
-
-    // Nếu exp bé hơn thời gian hiện tại (có bù trù 5 giây) -> Hết hạn
-    return decoded.exp < currentTime + 5;
-  } catch (e) {
-    return true; // Token rác, không parse được coi như hết hạn luôn
-  }
-};
-
-// Request interceptor: connect JWT
-api.interceptors.request.use((config) => {
+// ── Request interceptor ────────────────────────────────────────────────────
+// Sole responsibility: inject the Bearer token from Zustand.
+// Never check expiry here — that causes premature logout and breaks
+// the refresh flow. Expiry is handled reactively through 401 responses.
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = useAuthStore.getState().accessToken;
   if (token) {
-    if (!isTokenExpired(token)) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    else {
-      useAuthStore.getState().logout();
-      toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-    }
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Response interceptor: Return response directly without automatic success notification
+// ── Response interceptor ───────────────────────────────────────────────────
 api.interceptors.response.use(
-  (res) => {
-    return res;
-  },
+  (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as (typeof error.config & { _retry?: boolean }) | undefined;
-    const errData: unknown = error.response?.data;
+    const originalRequest = error.config as
+      | (InternalAxiosRequestConfig & { _retry?: boolean })
+      | undefined;
 
-    // Do not show error toast for background auth requests or 401 Unauthorized (except login)
-    // 401s are handled silently by the token refresh flow
-    let shouldShowToast = true;
-    if (originalRequest?.url?.includes("/auth/me") || originalRequest?.url?.includes("/auth/refresh")) {
-      shouldShowToast = false;
-    }
-    if (error.response?.status === 401 && !originalRequest?.url?.includes("/auth/login")) {
-      shouldShowToast = false;
-    }
+    const status = error.response?.status;
+    const errData = error.response?.data as Record<string, unknown> | undefined;
+    const url = originalRequest?.url ?? "";
 
-    if (shouldShowToast) {
-      // Show error toast when BE returns ErrorResponse (success, error, timestamp)
-      if (errData && typeof errData === "object" && Object.prototype.hasOwnProperty.call(errData, "error")) {
-        const e = (errData as { error?: unknown }).error;
-        const message =
-          typeof e === "string"
-            ? e
-            : e && typeof e === "object" && "message" in e && typeof (e as { message?: unknown }).message === "string"
-              ? String((e as { message?: unknown }).message)
-              : e && typeof e === "object" && "code" in e
-                ? String((e as { code?: unknown }).code)
-                : "Đã xảy ra lỗi. Vui lòng thử lại.";
-        toast.error(message);
-      } else if (error.response?.status && error.response.status >= 400) {
-        toast.error(error.response?.statusText || "Đã xảy ra lỗi. Vui lòng thử lại.");
+    // ── Error toast ──────────────────────────────────────────────────────
+    // Suppress toasts for:
+    //   • background auth probing (/auth/me, /auth/refresh)
+    //   • all 401s (handled silently by the refresh flow below)
+    const isSilentUrl =
+      SKIP_REFRESH_URLS.some((u) => url.includes(u)) ||
+      url.includes("/auth/me");
+    const shouldShowToast = !isSilentUrl && status !== 401;
+
+    if (shouldShowToast && status && status >= 400) {
+      const errObj = errData?.error;
+      let message = "Đã xảy ra lỗi. Vui lòng thử lại.";
+
+      if (typeof errObj === "string") {
+        message = errObj;
+      } else if (
+        errObj &&
+        typeof errObj === "object" &&
+        "message" in errObj &&
+        typeof (errObj as { message?: unknown }).message === "string"
+      ) {
+        message = String((errObj as { message: string }).message);
+      } else if (errData?.message && typeof errData.message === "string") {
+        message = errData.message;
       }
+
+      toast.error(message);
     }
 
-    // 401: try refresh token
-    if (
-      error.response?.status === 401 &&
+    // ── 401 silent refresh flow ──────────────────────────────────────────
+    const shouldAttemptRefresh =
+      status === 401 &&
       originalRequest &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes("/auth/refresh") &&
-      !originalRequest.url?.includes("/auth/login")
-    ) {
-      if (isRefreshing) {
-        // Enqueue concurrent requests
-        return new Promise(function (resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
-      }
+      !SKIP_REFRESH_URLS.some((u) => url.includes(u));
 
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        const res = await axios.post(
-          `${api.defaults.baseURL}/auth/refresh`,
-          undefined, // No body needs to be sent
-          { withCredentials: true } // Ensure cookies are sent
-        );
-
-        const payload: unknown = res.data;
-        if (payload && typeof payload === "object" && (payload as { success?: unknown }).success && "data" in payload) {
-          const data = (payload as { data?: unknown }).data;
-          const accessToken = data && typeof data === "object" && "accessToken" in data ? (data as { accessToken?: unknown }).accessToken : null;
-          if (typeof accessToken !== "string") throw new Error("Invalid refresh token response");
-          // Update zustand store
-          useAuthStore.getState().setToken(accessToken);
-
-          processQueue(null, accessToken);
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return api(originalRequest);
-        }
-        throw new Error("Invalid refresh credentials");
-      } catch (err) {
-        processQueue(err, null);
-        useAuthStore.getState().logout();
-        // Option to redirect to login, but we rely on ProtectedRoute usually. Redirecting could be aggressive if you have public routes doing 401s.
-        // window.location.href = "/login";
-        return Promise.reject(err);
-      } finally {
-        isRefreshing = false;
-      }
+    if (!shouldAttemptRefresh) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    // If refresh is already in-flight, queue this request and wait
+    if (isRefreshing) {
+      return enqueue().then((newToken) => {
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return api(originalRequest);
+      });
+    }
+
+    // First 401 — start the refresh cycle
+    originalRequest._retry = true;
+    setRefreshing(true);
+
+    try {
+      const newToken = await triggerSilentRefresh();
+
+      // Resolve all queued requests with the new token
+      processQueue(null, newToken);
+
+      // Retry the original request with the new token
+      originalRequest.headers.Authorization = `Bearer ${newToken}`;
+      return api(originalRequest);
+    } catch (refreshError) {
+      // Refresh failed (handled by triggerSilentRefresh, but we must clear the queue)
+      processQueue(refreshError, null);
+      return Promise.reject(refreshError);
+    } finally {
+      setRefreshing(false);
+    }
   }
 );
+

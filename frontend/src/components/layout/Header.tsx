@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, User, Crown, LogOut, Settings, Clock, Bookmark, X, Loader2, DollarSign } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useLogout } from "@/hooks/useLogout";
 import {
   Button,
   Input,
@@ -40,7 +41,8 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
+  const logout = useLogout();
   const navigate = useNavigate();
 
   const isAdmin = user?.role === "ADMIN";
@@ -84,8 +86,8 @@ export function Header() {
     setIsFocused(false);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
   };
 

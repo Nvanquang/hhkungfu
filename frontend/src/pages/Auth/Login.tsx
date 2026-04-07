@@ -6,6 +6,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/authStore";
 import { authService } from "@/services/authService";
+import { scheduleRefresh } from "@/services/tokenService";
+import { webSocketService } from "@/services/websocketService";
+import { triggerSilentRefresh } from "@/services/apiClient";
 import {
   Button,
   Input,
@@ -31,7 +34,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const navigate = useNavigate();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const { setToken, setUser } = useAuthStore();
   const [globalError, setGlobalError] = useState("");
 
   const form = useForm<LoginFormData>({
@@ -54,11 +57,21 @@ export default function Login() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setGlobalError("");
-      const result = await authService.login(data);
-      const user = result.data.user;
-      setAuth(user, result.data.accessToken);
-      toast.success(result.message);
-      
+      // authService.login now returns AuthResponse directly (no .data wrapper)
+      const { user, accessToken } = await authService.login(data);
+
+      // Store token + user in memory
+      setToken(accessToken);
+      setUser(user);
+
+      // Schedule proactive refresh + connect WS
+      scheduleRefresh(accessToken, () => {
+        void triggerSilentRefresh();
+      });
+      webSocketService.connectWithToken(accessToken);
+
+      toast.success("Đăng nhập thành công");
+
       const destination = user.role === "ADMIN" ? "/admin" : "/";
       navigate(destination, { replace: true });
     } catch (error: unknown) {

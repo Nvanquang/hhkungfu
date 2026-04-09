@@ -36,6 +36,57 @@ function useDebouncedValue<T>(value: T, delay: number) {
   return debounced;
 }
 
+
+interface UserMenuContentProps {
+  user: any;
+  isAdmin: boolean;
+  navigate: (path: string) => void;
+  handleLogout: () => void;
+}
+
+function UserMenuContent({ user, isAdmin, navigate, handleLogout }: UserMenuContentProps) {
+  return (
+    <DropdownMenuContent align="end" className="w-64 p-2 bg-card/95 backdrop-blur-xl border-border/50 shadow-2xl rounded-2xl">
+      <div className="px-3 py-3 border-b border-border/50 mb-1">
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Tài khoản</p>
+        <p className="font-bold text-foreground mt-1 truncate">{user.username}</p>
+      </div>
+      <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate(`/profile/${user.id}`)}>
+        <User className="mr-3 w-4 h-4 text-primary" /> Trang cá nhân
+      </DropdownMenuItem>
+      {isAdmin && (
+        <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/admin')}>
+          <Settings className="mr-3 w-4 h-4 text-primary" /> Trang quản trị
+        </DropdownMenuItem>
+      )}
+      <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/me/bookmarks')}>
+        <Bookmark className="mr-3 w-4 h-4 text-primary" /> Danh sách bookmarks
+      </DropdownMenuItem>
+      <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/me/history')}>
+        <Clock className="mr-3 w-4 h-4 text-primary" /> Lịch sử xem
+      </DropdownMenuItem>
+      <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/me/payments')}>
+        <DollarSign className="mr-3 w-4 h-4 text-primary" /> Lịch sử thanh toán
+      </DropdownMenuItem>
+      <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/settings')}>
+        <Settings className="mr-3 w-4 h-4 text-primary" /> Cài đặt
+      </DropdownMenuItem>
+      <DropdownMenuSeparator className="my-1 opacity-50" />
+      {user.isVip && (
+        <>
+          <DropdownMenuItem className="cursor-pointer text-amber-500 font-bold bg-amber-500/5 rounded-xl py-2.5 my-0.5" onClick={() => navigate('/vip')}>
+            <Crown className="mr-3 w-4 h-4 fill-amber-500/20" /> Gói VIP của tôi
+          </DropdownMenuItem>
+          <DropdownMenuSeparator className="my-1 opacity-50" />
+        </>
+      )}
+      <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 hover:bg-red-50/5 rounded-xl font-bold py-2.5 my-0.5">
+        <LogOut className="mr-3 w-4 h-4" /> Đăng xuất
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  );
+}
+
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -332,44 +383,7 @@ export function Header() {
                   </div>
                   <span className="text-muted-foreground ml-1 opacity-50">▾</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64 p-2 bg-card/95 backdrop-blur-xl border-border/50 shadow-2xl rounded-2xl">
-                  <div className="px-3 py-3 border-b border-border/50 mb-1">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Tài khoản</p>
-                    <p className="font-bold text-foreground mt-1 truncate">{user.username}</p>
-                  </div>
-                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate(`/profile/${user.id}`)}>
-                    <User className="mr-3 w-4 h-4 text-primary" /> Trang cá nhân
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/admin')}>
-                      <Settings className="mr-3 w-4 h-4 text-primary" /> Trang quản trị
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/me/bookmarks')}>
-                    <Bookmark className="mr-3 w-4 h-4 text-primary" /> Danh sách bookmarks
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/me/history')}>
-                    <Clock className="mr-3 w-4 h-4 text-primary" /> Lịch sử xem
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/me/payments')}>
-                    <DollarSign className="mr-3 w-4 h-4 text-primary" /> Lịch sử thanh toán
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium py-2.5 my-0.5" onClick={() => navigate('/settings')}>
-                    <Settings className="mr-3 w-4 h-4 text-primary" /> Cài đặt
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="my-1 opacity-50" />
-                  {user.isVip && (
-                    <>
-                      <DropdownMenuItem className="cursor-pointer text-amber-500 font-bold bg-amber-500/5 rounded-xl py-2.5 my-0.5" onClick={() => navigate('/vip')}>
-                        <Crown className="mr-3 w-4 h-4 fill-amber-500/20" /> Gói VIP của tôi
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator className="my-1 opacity-50" />
-                    </>
-                  )}
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 hover:bg-red-50/5 rounded-xl font-bold py-2.5 my-0.5">
-                    <LogOut className="mr-3 w-4 h-4" /> Đăng xuất
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
+                <UserMenuContent user={user} isAdmin={isAdmin} navigate={navigate} handleLogout={handleLogout} />
               </DropdownMenu>
             ) : (
               <div className="flex items-center gap-2">
@@ -400,15 +414,35 @@ export function Header() {
             >
               <Search className="w-5 h-5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-xl hover:bg-muted/50 transition-colors"
-              onClick={() => navigate(user ? `/profile/${user.id}` : "/login")}
-              aria-label="User"
-            >
-              <User className="w-5 h-5" />
-            </Button>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-xl hover:bg-muted/50 transition-colors"
+                    aria-label="User"
+                  >
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt="Avatar" className="w-8 h-8 rounded-lg object-cover" />
+                    ) : (
+                      <User className="w-5 h-5" />
+                    )}
+                  </Button>
+                } />
+                <UserMenuContent user={user} isAdmin={isAdmin} navigate={navigate} handleLogout={handleLogout} />
+              </DropdownMenu>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-xl hover:bg-muted/50 transition-colors"
+                onClick={() => navigate("/login")}
+                aria-label="User"
+              >
+                <User className="w-5 h-5" />
+              </Button>
+            )}
           </div>
         </div>
       </header>

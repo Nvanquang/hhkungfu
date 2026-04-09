@@ -55,8 +55,16 @@ public class BookmarkService {
 
         bookmarkRepository.save(bookmark);
 
-        // Evict cache
-        clearUserBookmarkCache(userIdStr, animeId);
+        // Update cache instantly
+        String setKey = "user:" + userIdStr + ":bookmarked_ids";
+        redisTemplate.opsForSet().add(setKey, animeId.toString());
+        redisTemplate.expire(setKey, Duration.ofDays(7)); // TTL for the set
+
+        // Individual status cache
+        redisTemplate.opsForValue().set("user:" + userIdStr + ":bookmark:" + animeId, "true", Duration.ofMinutes(10));
+
+        // Clear list pages (too complex to update JSON)
+        clearUserBookmarkListPageCache(userIdStr);
     }
 
     @Transactional
@@ -71,15 +79,28 @@ public class BookmarkService {
 
         bookmarkRepository.deleteById(id);
 
-        // Evict cache
-        clearUserBookmarkCache(userIdStr, animeId);
+        // Update cache instantly
+        String setKey = "user:" + userIdStr + ":bookmarked_ids";
+        redisTemplate.opsForSet().remove(setKey, animeId.toString());
+
+        // Individual status cache
+        redisTemplate.opsForValue().set("user:" + userIdStr + ":bookmark:" + animeId, "false", Duration.ofMinutes(10));
+
+        // Clear list pages
+        clearUserBookmarkListPageCache(userIdStr);
     }
 
     @Transactional(readOnly = true)
     public boolean isBookmarked(String userIdStr, Long animeId) {
-        String cacheKey = "user:" + userIdStr + ":bookmark:" + animeId;
+        // 1. Check set cache first
+        String setKey = "user:" + userIdStr + ":bookmarked_ids";
+        Boolean isMember = redisTemplate.opsForSet().isMember(setKey, animeId.toString());
+        if (isMember != null && Boolean.TRUE.equals(isMember)) {
+            return true;
+        }
 
-        // Check cache
+        // 2. Check individual key (or fallback to DB)
+        String cacheKey = "user:" + userIdStr + ":bookmark:" + animeId;
         String cached = redisTemplate.opsForValue().get(cacheKey);
         if (cached != null) {
             return Boolean.parseBoolean(cached);
@@ -88,8 +109,11 @@ public class BookmarkService {
         UUID userId = UUID.fromString(userIdStr);
         boolean exists = bookmarkRepository.existsByIdUserIdAndIdAnimeId(userId, animeId);
 
-        // Save to cache (10 mins)
+        // 3. Update cache
         redisTemplate.opsForValue().set(cacheKey, String.valueOf(exists), Duration.ofMinutes(10));
+        if (exists) {
+            redisTemplate.opsForSet().add(setKey, animeId.toString());
+        }
 
         return exists;
     }
@@ -136,14 +160,32 @@ public class BookmarkService {
 
     @Transactional(readOnly = true)
     public java.util.Set<Long> getBookmarkedAnimeIds(String userIdStr) {
+        String setKey = "user:" + userIdStr + ":bookmarked_ids";
+        Set<String> members = redisTemplate.opsForSet().members(setKey);
+
+        if (members != null && !members.isEmpty()) {
+            return members.stream().map(Long::valueOf).collect(java.util.stream.Collectors.toSet());
+        }
+
+        // Fallback to DB
         UUID userId = UUID.fromString(userIdStr);
-        return new java.util.HashSet<>(bookmarkRepository.findAnimeIdsByUserId(userId));
+        java.util.List<Long> ids = bookmarkRepository.findAnimeIdsByUserId(userId);
+        java.util.Set<Long> idSet = new java.util.HashSet<>(ids);
+
+        // Warm up cache
+        if (!idSet.isEmpty()) {
+            String[] idStrings = idSet.stream().map(String::valueOf).toArray(String[]::new);
+            redisTemplate.opsForSet().add(setKey, idStrings);
+            redisTemplate.expire(setKey, Duration.ofDays(7));
+        } else {
+            // Add a sentinel value if needed to avoid repeated DB calls for users with 0 bookmarks
+            // For now, just return empty
+        }
+
+        return idSet;
     }
 
-    private void clearUserBookmarkCache(String userId, Long animeId) {
-        // Delete status cache
-        redisTemplate.delete("user:" + userId + ":bookmark:" + animeId);
-
+    private void clearUserBookmarkListPageCache(String userId) {
         // Delete list cache (all pages)
         Set<String> keys = redisTemplate.keys("user:" + userId + ":bookmarks:page:*");
         if (keys != null && !keys.isEmpty()) {

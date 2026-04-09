@@ -91,7 +91,7 @@ export function AnimeInfoSection({
 
       {/* POSTER + MOBILE TITLE ROW */}
       <div className="flex gap-4 md:block shrink-0">
-        <div className="relative w-28 h-40 md:w-48 md:h-72 shrink-0 rounded-lg md:rounded-xl overflow-hidden border border-border/10 bg-muted shadow-[0_8px_30px_rgb(0,0,0,0.6)] z-20">
+        <div className="info-poster relative w-28 h-40 md:w-48 md:h-72 shrink-0 rounded-lg md:rounded-xl overflow-hidden border border-border/10 bg-muted shadow-[0_8px_30px_rgb(0,0,0,0.6)] z-20">
           {thumbnailUrl ? (
             <img src={thumbnailUrl} alt={title} className="h-full w-full object-cover" />
           ) : (
@@ -107,7 +107,7 @@ export function AnimeInfoSection({
         </div>
 
         {/* Mobile title (beside poster) */}
-        <div className="flex flex-col justify-end pb-1 md:hidden space-y-1.5 w-full">
+        <div className="info-stagger flex flex-col justify-end pb-1 md:hidden space-y-1.5 w-full">
           <div className="space-y-0.5 drop-shadow-md">
             <h1 className="text-xl font-black tracking-tight line-clamp-2 leading-tight drop-shadow-sm">{title}</h1>
             {titleOther && <p className="text-[11px] text-muted-foreground line-clamp-1">{titleOther}</p>}
@@ -127,17 +127,17 @@ export function AnimeInfoSection({
       </div>
 
       {/* DESKTOP CONTENT */}
-      <div className="flex flex-col space-y-4 flex-1 md:pt-28">
+      <div className="flex flex-col space-y-4 flex-1 pt-2 md:pt-0">
 
         {/* Desktop title block */}
-        <div className="hidden md:flex flex-col space-y-3">
+        <div className="info-stagger hidden md:flex flex-col space-y-3">
           <div className="space-y-1">
-            <h1 className="text-3xl lg:text-4xl font-black tracking-tight drop-shadow-md text-foreground">{title}</h1>
-            {titleOther && <p className="text-base text-muted-foreground">{titleOther}</p>}
+            <h1 className="text-3xl lg:text-4xl font-black tracking-tight drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] text-foreground">{title}</h1>
+            {titleOther && <p className="text-base text-muted-foreground drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">{titleOther}</p>}
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 text-foreground font-semibold bg-background/50 backdrop-blur-sm px-2.5 py-1 rounded-md border border-border/50 shadow-sm">
-              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 drop-shadow-md" />
               {malScore ?? "N/A"} / 10
               <span className="text-muted-foreground font-medium text-xs ml-1">({(viewCount ?? 0).toLocaleString()} lượt xem)</span>
             </span>
@@ -148,7 +148,7 @@ export function AnimeInfoSection({
         </div>
 
         {/* Metadata */}
-        <div className="flex flex-col gap-2.5 pt-1">
+        <div className="info-stagger flex flex-col gap-2.5 pt-1">
           <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-muted-foreground">
             <Badge variant="secondary" className={cn("hidden md:inline-flex", statusBadgeClass)}>
               {statusLabel}
@@ -179,7 +179,7 @@ export function AnimeInfoSection({
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-4 md:pt-3">
+        <div className="info-stagger flex flex-col sm:flex-row gap-3 pt-4 md:pt-3">
           <Button size="lg" className="gap-2 w-full sm:w-auto font-bold shadow-md shadow-primary/20 hover:scale-[1.02] transition-transform" onClick={() => navigate(`/watch/${slug}/1`)}>
             <Play className="h-4 w-4 fill-current" /> ▶ Xem Tập 1
           </Button>
@@ -197,7 +197,7 @@ export function AnimeInfoSection({
           </Button>
         </div>
 
-        <div className="pt-2 flex items-center justify-center md:justify-start gap-3 text-sm">
+        <div className="info-stagger pt-2 flex items-center justify-center md:justify-start gap-3 text-sm">
           <span className="font-medium text-foreground hidden md:inline">★ Đánh giá của bạn:</span>
           <div className="flex gap-[2px] cursor-pointer" onMouseLeave={() => setHoverRating(0)}>
             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (

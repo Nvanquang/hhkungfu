@@ -8,7 +8,7 @@
  *  4. Floating dust particles   – 20 divs drifting upward (GSAP stagger loop)
  *  5. Content                   – badge → title (massive slam impact) → meta → genre  → buttons → dots
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bookmark, Flame, Play } from "lucide-react";
 import { Badge, Button } from "@/components/ui";
@@ -55,6 +55,9 @@ export function HeroSection({ featured, activeIndex, setActiveIndex, isLoading, 
   const lightRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const flashRef = useRef<HTMLDivElement>(null);
+
+  // Local state to track bookmark updates instantly
+  const [bookmarkMap, setBookmarkMap] = useState<Record<number, boolean>>({});
 
   // ── 1. Không Gian Tương Tác Chuột (Magnetic Mouse Parallax & Scroll) ──
   useEffect(() => {
@@ -255,20 +258,28 @@ export function HeroSection({ featured, activeIndex, setActiveIndex, isLoading, 
 
   const handleToggleBookmark = async () => {
     if (!heroAnime) return;
+    const currentStatus = bookmarkMap[heroAnime.id] ?? !!heroAnime.isBookmarked;
+    const newStatus = !currentStatus;
+
+    // Optimistic UI update
+    setBookmarkMap(prev => ({ ...prev, [heroAnime.id]: newStatus }));
+
     try {
-      if (heroAnime.isBookmarked) {
+      if (currentStatus) {
         await userService.removeBookmark(heroAnime.id);
         toast.success("Đã xóa khỏi danh sách bookmarks");
-        heroAnime.isBookmarked = false;
       } else {
         await userService.addBookmark(heroAnime.id);
         toast.success("Đã thêm vào danh sách bookmarks");
-        heroAnime.isBookmarked = true;
       }
-    } catch {
+    } catch (err) {
+      // Revert on error
+      setBookmarkMap(prev => ({ ...prev, [heroAnime.id]: currentStatus }));
       toast.error("Có lỗi xảy ra, vui lòng thử lại sau");
     }
   };
+
+  const isBookmarked = bookmarkMap[heroAnime.id] ?? !!heroAnime.isBookmarked;
 
   return (
     <section ref={sectionRef} className={SECTION_CLASS}>
@@ -411,12 +422,12 @@ export function HeroSection({ featured, activeIndex, setActiveIndex, isLoading, 
               variant="outline"
               className={cn(
                 "gap-2 border-white/30 text-white hover:bg-white/15 backdrop-blur-md font-semibold transition-all duration-200 text-base px-6",
-                heroAnime.isBookmarked && "bg-orange-500/20 border-orange-500/50 text-orange-400 hover:bg-orange-500/30"
+                isBookmarked && "bg-orange-500/20 border-orange-500/50 text-orange-400 hover:bg-orange-500/30"
               )}
               type="button"
               onClick={handleToggleBookmark}
             >
-              <Bookmark className={cn("h-5 w-5", heroAnime.isBookmarked && "fill-current")} /> Bookmark
+              <Bookmark className={cn("h-5 w-5", isBookmarked && "fill-current")} /> Bookmark
             </Button>
           </div>
 

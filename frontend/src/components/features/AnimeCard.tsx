@@ -36,7 +36,7 @@ export function AnimeCard({ anime, className, showDetails = true, onRemove }: An
         {anime.thumbnailUrl ? (
           <img
             src={anime.thumbnailUrl}
-            alt={anime.title as string}
+            alt={anime.titleVi as string}
             className="object-cover w-full h-full"
             loading="lazy"
           />
@@ -88,8 +88,8 @@ export function AnimeCard({ anime, className, showDetails = true, onRemove }: An
           </div>
 
           <Link to={`/anime/${anime.slug}`} className="hover:text-primary transition-colors outline-none focus-visible:ring-1 focus-visible:ring-primary rounded-sm">
-            <h3 className="font-bold text-sm leading-tight line-clamp-1 tracking-tight" title={anime.title as string}>
-              {anime.title}
+            <h3 className="font-bold text-sm leading-tight line-clamp-1 tracking-tight" title={anime.titleVi as string}>
+              {anime.titleVi}
             </h3>
           </Link>
 

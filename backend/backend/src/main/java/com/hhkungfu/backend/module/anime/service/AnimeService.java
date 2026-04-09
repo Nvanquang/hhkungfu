@@ -175,7 +175,9 @@ public class AnimeService {
         String cachedJson = redisTemplate.opsForValue().get(cacheKey);
         if (cachedJson != null) {
             try {
-                return objectMapper.readValue(cachedJson, AnimeDetailDto.class);
+                AnimeDetailDto dto = objectMapper.readValue(cachedJson, AnimeDetailDto.class);
+                populateBookmarkStatus(dto);
+                return dto;
             } catch (JsonProcessingException e) {
                 log.warn("Failed to deserialize anime from cache key: {}", cacheKey);
             }
@@ -191,9 +193,8 @@ public class AnimeService {
                                         ErrorConstants.ANIME_NOT_FOUND.getCode()));
 
         AnimeDetailDto dto = animeMapper.toDetailDto(anime);
-        populateBookmarkStatus(dto);
 
-        // 3. Save to Cache
+        // 3. Save to Cache without user data
         try {
             String json = objectMapper.writeValueAsString(dto);
             redisTemplate.opsForValue().set(cacheKey, json, Duration.ofHours(1));
@@ -203,6 +204,8 @@ public class AnimeService {
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize anime detail dto", e);
         }
+
+        populateBookmarkStatus(dto);
 
         return dto;
     }
@@ -235,13 +238,13 @@ public class AnimeService {
         List<Anime> animes = animeRepository.findFeaturedAnimes(limit);
         List<AnimeSummaryDto> dtos = animes.stream().map(animeMapper::toSummaryDto).toList();
 
-        populateBookmarkStatus(dtos);
-
         try {
             redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(dtos), Duration.ofMinutes(10));
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize featured animes", e);
         }
+
+        populateBookmarkStatus(dtos);
 
         PageResponse<AnimeSummaryDto> response = PageResponse.<AnimeSummaryDto>builder()
                 .items(dtos)
@@ -372,6 +375,8 @@ public class AnimeService {
         if (dtos == null || dtos.isEmpty())
             return;
 
+        dtos.forEach(dto -> dto.setIsBookmarked(false)); // default reset
+
         SecurityUtil.getCurrentUserId().ifPresent(userId -> {
             java.util.Set<Long> bookmarkedIds = bookmarkService.getBookmarkedAnimeIds(userId);
             dtos.forEach(dto -> dto.setIsBookmarked(bookmarkedIds.contains(dto.getId())));
@@ -381,6 +386,8 @@ public class AnimeService {
     private void populateBookmarkStatus(AnimeDetailDto dto) {
         if (dto == null)
             return;
+
+        dto.setIsBookmarked(false); // default reset
 
         SecurityUtil.getCurrentUserId().ifPresent(userId -> {
             java.util.Set<Long> bookmarkedIds = bookmarkService.getBookmarkedAnimeIds(userId);

@@ -39,20 +39,6 @@ export function OverviewTab({
               )}
             </div>
           </div>
-
-          <div className="space-y-4">
-            <h3 className="font-bold text-foreground opacity-90 text-[15px]">NHÂN VẬT CHÍNH</h3>
-            <div className="flex gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {["Yuji", "Megumi", "Gojo", "Nobara"].map((char, idx) => (
-                <div key={idx} className="shrink-0 flex flex-col items-center gap-2 cursor-pointer group">
-                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-muted/60 border border-border/50 flex items-center justify-center font-bold text-xl text-muted-foreground group-hover:border-primary group-hover:bg-primary/5 transition-all">
-                    {char[0]}
-                  </div>
-                  <span className="font-medium text-muted-foreground text-sm group-hover:text-foreground">{char}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Right sidebar */}
@@ -65,12 +51,12 @@ export function OverviewTab({
                 <span className="font-medium text-right">{studios.map(s => s.name).join(', ')}</span>
               </div>
             ) : null}
-            {year          ? <div className="flex justify-between items-center gap-4"><span className="text-muted-foreground shrink-0">Năm</span><span className="font-medium">{year}</span></div> : null}
-            {season        ? <div className="flex justify-between items-center gap-4"><span className="text-muted-foreground shrink-0">Mùa</span><span className="font-medium">{season}</span></div> : null}
+            {year ? <div className="flex justify-between items-center gap-4"><span className="text-muted-foreground shrink-0">Năm</span><span className="font-medium">{year}</span></div> : null}
+            {season ? <div className="flex justify-between items-center gap-4"><span className="text-muted-foreground shrink-0">Mùa</span><span className="font-medium">{season}</span></div> : null}
             {totalEpisodes ? <div className="flex justify-between items-center gap-4"><span className="text-muted-foreground shrink-0">Tập</span><span className="font-medium">{totalEpisodes}</span></div> : null}
             {episodeDuration ? <div className="flex justify-between items-center gap-4"><span className="text-muted-foreground shrink-0">Thời lượng</span><span className="font-medium">~{episodeDuration} phút</span></div> : null}
-            {ageRating     ? <div className="flex justify-between items-center gap-4"><span className="text-muted-foreground shrink-0">Độ tuổi</span><span className="font-medium">{ageRating}</span></div> : null}
-            {malScore      ? <div className="flex justify-between items-center gap-4"><span className="text-muted-foreground shrink-0">Nguồn</span><span className="font-medium">Manga</span></div> : null}
+            {ageRating ? <div className="flex justify-between items-center gap-4"><span className="text-muted-foreground shrink-0">Độ tuổi</span><span className="font-medium">{ageRating}</span></div> : null}
+            {malScore ? <div className="flex justify-between items-center gap-4"><span className="text-muted-foreground shrink-0">Nguồn</span><span className="font-medium">Manga</span></div> : null}
             <div className="flex justify-between items-center gap-4">
               <span className="text-muted-foreground shrink-0">Xếp hạng</span>
               <span className="font-medium text-amber-500">#{animeId} (MAL)</span>

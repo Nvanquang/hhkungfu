@@ -1,29 +1,45 @@
-// Banner ảnh nền phía trên trang, hỗ trợ bannerUrl, fallback blur từ thumbnail, và nút back trên mobile.
 import { ChevronLeft } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface Props {
-  title: string;
   bannerUrl?: string | null;
   thumbnailUrl?: string | null;
   onBack: () => void;
+  children?: ReactNode;
 }
 
-export function HeroBanner({ title, bannerUrl, thumbnailUrl, onBack }: Props) {
+export function HeroBanner({ bannerUrl, thumbnailUrl, onBack, children }: Props) {
   return (
-    <section className="relative w-full h-44 md:h-72 overflow-hidden bg-muted/20">
-      {bannerUrl ? (
-        <img src={bannerUrl} alt={title} className="absolute inset-0 h-full w-full object-cover" />
-      ) : thumbnailUrl ? (
-        <img src={thumbnailUrl} alt={title} className="absolute inset-0 h-full w-full object-cover blur-2xl scale-110 opacity-30 brightness-50" />
-      ) : (
-        <div className="absolute inset-0 bg-muted" />
-      )}
-      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/60 to-transparent" />
+    <section className="relative w-full flex flex-col justify-end bg-background min-h-[50vh]">
+      {/* Lớp nền ảnh banner phủ kín chiều rộng màn hình, đóng vai trò như Hero Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <img
+          src={bannerUrl || thumbnailUrl || ""}
+          alt=""
+          className="hero-bg-img w-full h-full object-cover object-top lg:object-center opacity-90 transition-opacity duration-1000"
+          aria-hidden="true"
+        />
+        {/* Lớp phủ dốc (gradient) từ bên trái sang: Giúp vùng chứa chữ (bên trái) đủ tối để đọc nét, nhưng vùng bên phải ảnh vẫn sáng rực rỡ */}
+        <div className="absolute inset-y-0 left-0 w-3/4 md:w-3/5 bg-gradient-to-r from-background/95 via-background/60 to-transparent hidden md:block" />
 
+        {/* Lớp gradient lớn từ dưới lên để làm tối dần, giúp phần nội dung chèn lên (children) luôn rõ nét và chuyển cảnh mượt xuống nội dung trang */}
+        <div className="absolute inset-x-0 bottom-0 h-[85%] bg-gradient-to-t from-background via-background/95 via-40% to-transparent" />
+
+        {/* Làm tối mờ cạnh trên một chút để nút back và breadcrumb dễ nhìn hơn */}
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background/60 to-transparent" />
+      </div>
+
+      {/* Vùng không gian cho children lồng vào trong banner (ví dụ: AnimeInfoSection) */}
+      <div className="relative z-10 w-full pt-20 md:pt-40 pb-6 md:pb-12">
+        {children}
+      </div>
+
+      {/* Nút back trên Mobile */}
       <button
         type="button"
         onClick={onBack}
-        className="md:hidden absolute top-4 left-4 z-20 flex items-center justify-center p-2 rounded-full bg-background/50 hover:bg-background/80 backdrop-blur-sm text-foreground shadow-sm"
+        className="md:hidden absolute top-4 left-4 z-30 flex items-center justify-center p-2 rounded-full bg-background/50 hover:bg-background/80 backdrop-blur-sm text-foreground shadow-sm transition-colors"
+        aria-label="Quay lại"
       >
         <ChevronLeft className="h-5 w-5" />
       </button>

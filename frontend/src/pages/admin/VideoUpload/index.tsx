@@ -53,7 +53,7 @@ export default function VideoUploadPage() {
             to={animeId ? `/admin/animes/${animeId}/episodes` : "#"}
             className="hover:text-slate-800 hover:underline"
           >
-            {animeFromState?.title ?? `Anime #${animeId}`}
+            {animeFromState?.titleVi ?? `Anime #${animeId}`}
           </Link>
           <span>/</span>
           <Link

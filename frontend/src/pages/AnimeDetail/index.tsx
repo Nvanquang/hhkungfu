@@ -1,6 +1,7 @@
 // Entry point trang chi tiết anime: lấy slug từ URL, gọi hook, xử lý loading/error rồi compose các component lại.
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { gsap } from "gsap";
 import { EmptyState } from "@/components/ui";
 import { Breadcrumb } from "@/components/features/Breadcrumb";
 import { useAnimeDetail } from "./hooks/useAnimeDetail";
@@ -19,6 +20,57 @@ export default function AnimeDetail() {
   const { anime, related, titleOther, mockEpisodeCount, isLoading, isError, isRelatedLoading, refetch } =
     useAnimeDetail(idOrSlug);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (isLoading || isError || !anime) return;
+
+    let ctx = gsap.context(() => {
+      // 1. Zoom in & unblur banner background
+      gsap.fromTo(".hero-bg-img", {
+        scale: 1.15,
+        filter: "blur(15px)",
+      }, {
+        scale: 1.05,
+        filter: "blur(0px)",
+        duration: 1.2,
+        ease: "power3.out"
+      });
+
+      // 2. Poster slide up
+      gsap.from(".info-poster", {
+        y: 30,
+        opacity: 0,
+        filter: "blur(5px)",
+        duration: 0.8,
+        delay: 0.1,
+        ease: "power3.out"
+      });
+
+      // 3. Info metadata stagger
+      gsap.from(".info-stagger", {
+        y: 20,
+        opacity: 0,
+        filter: "blur(3px)",
+        duration: 0.6,
+        stagger: 0.08,
+        delay: 0.2,
+        ease: "power2.out"
+      });
+
+      // 4. Tabs reveal
+      gsap.from(".tabs-section", {
+        y: 20,
+        opacity: 0,
+        duration: 0.8,
+        delay: 0.5,
+        ease: "power3.out"
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, [isLoading, isError, anime]);
+
   if (isLoading) return <DetailSkeleton />;
 
   if (isError || !anime) {
@@ -34,40 +86,41 @@ export default function AnimeDetail() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-background pb-12">
+    <div ref={containerRef} className="w-full min-h-screen bg-background pb-12">
       <HeroBanner
-        title={anime.title as string}
         bannerUrl={anime.bannerUrl}
         thumbnailUrl={anime.thumbnailUrl}
         onBack={() => navigate(-1)}
-      />
+      >
+        <div className="main-container">
+          <Breadcrumb
+            className="mb-4 hidden md:flex opacity-80"
+            items={[
+              { label: "Khám phá Anime", href: "/anime" },
+              { label: anime.titleVi as string },
+            ]}
+          />
+          <AnimeInfoSection
+            animeId={anime.id}
+            slug={anime.slug as string}
+            title={anime.titleVi as string}
+            titleOther={titleOther}
+            thumbnailUrl={anime.thumbnailUrl}
+            hasVipContent={anime.hasVipContent}
+            malScore={anime.malScore}
+            viewCount={anime.viewCount}
+            status={anime.status}
+            type={anime.type}
+            totalEpisodes={anime.totalEpisodes}
+            year={anime.year}
+            studios={anime.studios}
+            genres={anime.genres}
+            isBookmarked={anime.isBookmarked}
+          />
+        </div>
+      </HeroBanner>
 
-      <div className="main-container relative z-10 -mt-12 md:-mt-24">
-        <Breadcrumb
-          className="mb-4 hidden md:flex"
-          items={[
-            { label: "Khám phá Anime", href: "/anime" },
-            { label: anime.title as string },
-          ]}
-        />
-        <AnimeInfoSection
-          animeId={anime.id}
-          slug={anime.slug as string}
-          title={anime.title as string}
-          titleOther={titleOther}
-          thumbnailUrl={anime.thumbnailUrl}
-          hasVipContent={anime.hasVipContent}
-          malScore={anime.malScore}
-          viewCount={anime.viewCount}
-          status={anime.status}
-          type={anime.type}
-          totalEpisodes={anime.totalEpisodes}
-          year={anime.year}
-          studios={anime.studios}
-          genres={anime.genres}
-          isBookmarked={anime.isBookmarked}
-        />
-
+      <div className="tabs-section main-container relative z-10">
         <hr className="my-8 border-border/40 hidden md:block" />
 
         <DetailTabs

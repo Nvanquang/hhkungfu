@@ -10,9 +10,9 @@ interface Props {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  ONGOING:   "Đang chiếu",
+  ONGOING: "Đang chiếu",
   COMPLETED: "Hoàn thành",
-  UPCOMING:  "Sắp ra mắt",
+  UPCOMING: "Sắp ra mắt",
 };
 
 export function EpisodeHeader({ anime, animeId, episodeCount, onAddNew }: Props) {
@@ -25,7 +25,7 @@ export function EpisodeHeader({ anime, animeId, episodeCount, onAddNew }: Props)
         </Link>
         <span>/</span>
         <span className="text-slate-800 font-medium truncate max-w-[180px]">
-          {anime?.title ?? `Anime #${animeId}`}
+          {anime?.titleVi ?? `Anime #${animeId}`}
         </span>
         <span>/</span>
         <span>Quản lý tập</span>

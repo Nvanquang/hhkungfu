@@ -68,17 +68,25 @@ public class LocalStorageService implements StorageService {
     }
 
     @Override
-    public Resource load(String path) {
+    public Resource load(String relativePath) {
         try {
-            Path file = Path.of(basePath, path);
-            Resource resource = new UrlResource(file.toUri());
-            if (resource.exists() || resource.isReadable()) {
+            Path base = Path.of(basePath).toRealPath();
+            // 🔐 Security: Normalize path, kiểm tra không thoát ra ngoài basePath
+            Path resolved = base.resolve(relativePath).normalize();
+
+            if (!resolved.startsWith(base)) {
+                // Path traversal attack detected
+                throw new RuntimeException("Access denied: path traversal detected for: " + relativePath);
+            }
+
+            Resource resource = new UrlResource(resolved.toUri());
+            if (resource.exists() && resource.isReadable()) {
                 return resource;
             } else {
-                throw new RuntimeException("Could not read file: " + path);
+                throw new RuntimeException("Could not read file: " + relativePath);
             }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Could not read file: " + path, e);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Could not read file: " + relativePath, e);
         }
     }
 }

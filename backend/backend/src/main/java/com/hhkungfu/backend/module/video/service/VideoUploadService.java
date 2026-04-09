@@ -30,6 +30,7 @@ public class VideoUploadService {
     private final EpisodeRepository episodeRepository;
     private final TranscodeJobRepository transcodeJobRepository;
     private final VideoTranscodeService videoTranscodeService;
+    private final VideoFileValidator videoFileValidator;
 
     @Transactional
     public Long initiateUpload(Long episodeId, MultipartFile file) {
@@ -42,7 +43,11 @@ public class VideoUploadService {
                     ErrorConstants.VIDEO_ALREADY_PROCESSING.getCode());
         }
 
+        // Security: Validate file trước khi lưu (magic bytes, size, filename)
+        videoFileValidator.validate(file);
+
         try {
+            // Security: Luôn dùng UUID random — không dùng original filename
             String tempFileName = UUID.randomUUID() + ".mp4";
             Path tempFilePath = Path.of(System.getProperty("java.io.tmpdir"), "uploads", tempFileName);
             Files.createDirectories(tempFilePath.getParent());

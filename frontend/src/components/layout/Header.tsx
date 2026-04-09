@@ -113,7 +113,7 @@ export function Header() {
           isFocused && "bg-zinc-950/95 backdrop-blur-lg border-b border-white/10 h-16 shadow-2xl"
         )}
       >
-        <div className="container h-full mx-auto px-4 md:px-6 flex items-center justify-between gap-4">
+        <div className="main-container h-full flex items-center justify-between gap-4">
           {/* Logo */}
           <Link to="/" className={cn(
             "flex items-center shrink-0 transition-opacity duration-300",

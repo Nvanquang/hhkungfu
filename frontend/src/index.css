@@ -128,6 +128,13 @@
   .main-container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full;
   }
+
+  /* Support for modern dynamic viewport height */
+  @supports (height: 100dvh) {
+    .min-h-screen {
+      min-height: 100dvh;
+    }
+  }
 }
 
 @layer utilities {
@@ -157,6 +164,15 @@
       0 0 0 1px hsl(var(--ring)),
       0 0 0 4px rgba(229, 9, 20, 0.18),
       0 10px 26px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  /* Utility to hide scrollbar but keep functional */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 

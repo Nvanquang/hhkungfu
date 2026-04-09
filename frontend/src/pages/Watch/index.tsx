@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { AlertTriangle, ChevronLeft, Home, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui";
 import { useWatch } from "./hooks/useWatch";
 import { WatchNavbar } from "./components/WatchNavbar";
 import { VideoPlayer } from "./components/VideoPlayer";
@@ -15,6 +16,7 @@ export default function Watch() {
     animeSlug: string;
     episodeNumber: string;
   }>();
+  const navigate = useNavigate();
 
   // Scroll to top when episode changes
   useEffect(() => {
@@ -43,12 +45,32 @@ export default function Watch() {
   // Anime or episode not found
   if (isError || !episode) {
     return (
-      <div className="flex flex-col min-h-screen bg-black items-center justify-center gap-4 text-white">
-        <AlertTriangle className="w-10 h-10 text-destructive" />
-        <p className="text-lg font-semibold">Không tìm thấy tập phim</p>
-        <p className="text-sm text-white/50">
-          Anime hoặc tập phim này không tồn tại. Vui lòng kiểm tra lại đường dẫn.
-        </p>
+      <div className="flex flex-col min-h-screen bg-black items-center justify-center gap-6 text-white px-6">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <AlertTriangle className="w-16 h-16 text-destructive" />
+          <h1 className="text-2xl font-black tracking-tight uppercase">Không tìm thấy</h1>
+          <p className="text-sm text-white/50 max-w-sm">
+            Tập phim hoặc Anime này không tồn tại hoặc đã bị gỡ bỏ. Vui lòng kiểm tra lại đường dẫn.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            size="lg"
+            className="flex-1 sm:flex-none gap-2 border-white/20 text-white hover:bg-white/10"
+            onClick={() => navigate(-1)}
+          >
+            <ChevronLeft className="w-4 h-4" /> Quay lại
+          </Button>
+          <Button
+            size="lg"
+            className="flex-1 sm:flex-none gap-2 font-bold"
+            onClick={() => navigate("/")}
+          >
+            <Home className="w-4 h-4" /> Trang chủ
+          </Button>
+        </div>
       </div>
     );
   }
@@ -57,7 +79,7 @@ export default function Watch() {
 
   return (
     // Full-height dark layout — no MainLayout header/footer
-    <div className="flex flex-col min-h-screen bg-black text-white">
+    <div className="flex flex-col min-h-screen min-h-[100dvh] bg-black text-white overflow-x-hidden">
       {/* Slim dark navbar */}
       <WatchNavbar
         animeTitle={anime?.title ?? null}
@@ -67,10 +89,10 @@ export default function Watch() {
       />
 
       {/* Main content area */}
-      <div className="flex flex-1 gap-0 lg:gap-4 lg:p-4 lg:items-start overflow-hidden">
+      <div className="flex flex-1 flex-col lg:flex-row gap-0 lg:gap-4 lg:p-4 lg:items-start overflow-y-auto lg:overflow-hidden">
 
         {/* Left column: player + info + mobile episode grid */}
-        <div className="flex-1 flex flex-col min-w-0 gap-4">
+        <div className="flex-1 flex flex-col min-w-0 gap-4 lg:h-full lg:overflow-y-auto scrollbar-hide lg:scrollbar-default">
 
           {/* VIDEO PLAYER AREA */}
           {isStreamLoading && !streamInfo && !isVipRequired ? (

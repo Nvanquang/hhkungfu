@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public class VideoUtils {
 
-    // 🔐 Security: Timeout 60 giây để lấy duration — tránh bị treo bởi malformed file
+    // Security: Timeout 60 giây để lấy duration — tránh bị treo bởi malformed file
     private static final long PROBE_TIMEOUT_SECONDS = 60;
 
     /**
@@ -22,11 +22,11 @@ public class VideoUtils {
         File tempFile = null;
         Process process = null;
         try {
-            // 🔐 Security: UUID random temp filename
+            // Security: UUID random temp filename
             tempFile = File.createTempFile("probe-" + java.util.UUID.randomUUID(), ".mp4");
             multipartFile.transferTo(tempFile);
 
-            // 🔐 Security: Dùng args array (không concat string) — tránh command injection
+            // Security: Dùng args array (không concat string) — tránh command injection
             ProcessBuilder pb = new ProcessBuilder(
                     "ffprobe",
                     "-v", "error",
@@ -39,7 +39,7 @@ public class VideoUtils {
 
             process = pb.start();
 
-            // 🔐 Security: Timeout để tránh bị treo vô hạn bởi malformed/bomb file
+            // Security: Timeout để tránh bị treo vô hạn bởi malformed/bomb file
             boolean finished = process.waitFor(PROBE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
@@ -65,7 +65,7 @@ public class VideoUtils {
         } catch (IOException e) {
             throw new RuntimeException("Lỗi khi đọc thời lượng video", e);
         } finally {
-            // 🔐 Security: Luôn xóa temp file
+            // Security: Luôn xóa temp file
             if (tempFile != null && tempFile.exists()) {
                 tempFile.delete();
             }

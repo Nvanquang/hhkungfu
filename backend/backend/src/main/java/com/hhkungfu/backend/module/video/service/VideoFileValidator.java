@@ -8,7 +8,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.regex.Pattern;
 
 /**
@@ -24,14 +23,13 @@ public class VideoFileValidator {
     private static final long MAX_SIZE_BYTES = 8L * 1024 * 1024 * 1024;
 
     // Reject double-extension patterns: video.mp4.php, file.mp4.exe
-    private static final Pattern DOUBLE_EXTENSION_PATTERN =
-            Pattern.compile("(?i)^.*\\.(mp4|mp3)\\.[a-z0-9]{1,10}$");
+    private static final Pattern DOUBLE_EXTENSION_PATTERN = Pattern.compile("(?i)^.*\\.(mp4|mp3)\\.[a-z0-9]{1,10}$");
 
     // MP4 magic bytes: "ftyp" at offset 4 → bytes 4-7 = 0x66 0x74 0x79 0x70
-    private static final byte[] MP4_MAGIC = {0x66, 0x74, 0x79, 0x70};
+    private static final byte[] MP4_MAGIC = { 0x66, 0x74, 0x79, 0x70 };
 
     // MP3 magic bytes (ID3 tag): 0x49 0x44 0x33
-    private static final byte[] MP3_ID3_MAGIC = {0x49, 0x44, 0x33};
+    private static final byte[] MP3_ID3_MAGIC = { 0x49, 0x44, 0x33 };
 
     // MP3 frame sync (no ID3): 0xFF 0xFB or 0xFF 0xFA or 0xFF 0xF3
     private static final byte MP3_FRAME_SYNC_FIRST = (byte) 0xFF;
@@ -56,8 +54,7 @@ public class VideoFileValidator {
             throw new BusinessException(
                     "File quá lớn. Tối đa 8GB",
                     "VIDEO",
-                    ErrorConstants.VIDEO_TOO_LARGE.getCode()
-            );
+                    ErrorConstants.VIDEO_TOO_LARGE.getCode());
         }
     }
 
@@ -73,8 +70,7 @@ public class VideoFileValidator {
             throw new BusinessException(
                     "Tên file không hợp lệ",
                     "VIDEO",
-                    ErrorConstants.VIDEO_INVALID_FILENAME.getCode()
-            );
+                    ErrorConstants.VIDEO_INVALID_FILENAME.getCode());
         }
 
         // Reject path traversal trong filename
@@ -83,8 +79,7 @@ public class VideoFileValidator {
             throw new BusinessException(
                     "Tên file không hợp lệ",
                     "VIDEO",
-                    ErrorConstants.VIDEO_INVALID_FILENAME.getCode()
-            );
+                    ErrorConstants.VIDEO_INVALID_FILENAME.getCode());
         }
     }
 
@@ -94,7 +89,8 @@ public class VideoFileValidator {
         try (InputStream is = file.getInputStream()) {
             int bytesRead = is.read(header, 0, header.length);
             if (bytesRead < 8) {
-                throw new BusinessException("File quá nhỏ hoặc bị hỏng", "VIDEO", ErrorConstants.VIDEO_MALFORMED.getCode());
+                throw new BusinessException("File quá nhỏ hoặc bị hỏng", "VIDEO",
+                        ErrorConstants.VIDEO_MALFORMED.getCode());
             }
         } catch (IOException e) {
             throw new BusinessException("Không thể đọc file", "VIDEO", ErrorConstants.UPLOAD_FAILED.getCode());
@@ -113,15 +109,15 @@ public class VideoFileValidator {
         throw new BusinessException(
                 "Định dạng file không được hỗ trợ. Chỉ chấp nhận MP4 và MP3",
                 "VIDEO",
-                ErrorConstants.VIDEO_INVALID_TYPE.getCode()
-        );
+                ErrorConstants.VIDEO_INVALID_TYPE.getCode());
     }
 
     /**
      * MP4: bytes[4..7] == "ftyp" (0x66 0x74 0x79 0x70)
      */
     private boolean isMp4(byte[] header) {
-        if (header.length < 8) return false;
+        if (header.length < 8)
+            return false;
         return header[4] == MP4_MAGIC[0]
                 && header[5] == MP4_MAGIC[1]
                 && header[6] == MP4_MAGIC[2]
@@ -129,10 +125,12 @@ public class VideoFileValidator {
     }
 
     /**
-     * MP3: Bắt đầu bằng ID3 tag (0x49 0x44 0x33) hoặc frame sync (0xFF 0xFB/FA/F3/E3)
+     * MP3: Bắt đầu bằng ID3 tag (0x49 0x44 0x33) hoặc frame sync (0xFF
+     * 0xFB/FA/F3/E3)
      */
     private boolean isMp3(byte[] header) {
-        if (header.length < 3) return false;
+        if (header.length < 3)
+            return false;
 
         // ID3 tag
         if (header[0] == MP3_ID3_MAGIC[0]

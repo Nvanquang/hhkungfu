@@ -163,6 +163,10 @@
     {
       "name": "cloudinary.api-secret",
       "type": "java.lang.String"
+    },
+    {
+      "name": "app.api.base-url",
+      "type": "java.lang.String"
     }
   ]
 }

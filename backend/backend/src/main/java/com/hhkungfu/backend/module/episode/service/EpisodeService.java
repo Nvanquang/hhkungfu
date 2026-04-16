@@ -15,9 +15,9 @@ import com.hhkungfu.backend.module.episode.repository.EpisodeRepository;
 import com.hhkungfu.backend.module.episode.repository.SubtitleRepository;
 import com.hhkungfu.backend.module.video.dto.StreamInfoDto;
 import com.hhkungfu.backend.module.video.enums.VideoStatus;
-import com.hhkungfu.backend.infrastructure.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -39,7 +39,8 @@ public class EpisodeService {
     private final EpisodeRepository episodeRepository;
     private final AnimeRepository animeRepository;
     private final SubtitleRepository subtitleRepository;
-    private final StorageService storageService;
+    @Value("${app.api.base-url:http://localhost:8080}")
+    private String apiBaseUrl;
     private final RedisTemplate<String, Object> redisTemplate;
 
     // ── CRUD ──────────────────────────────────────────────────────────────
@@ -197,7 +198,9 @@ public class EpisodeService {
                 masterUrl = baseDir + "/master.m3u8";
             }
         } else {
-            baseDir = storageService.getBaseUrl() + "/" + ep.getId();
+            // Always use API endpoints instead of direct storage URLs
+            String apiBaseUrl = getApiBaseUrl();
+            baseDir = apiBaseUrl + "/" + ep.getId();
             masterUrl = baseDir + "/master.m3u8";
         }
 
@@ -249,5 +252,10 @@ public class EpisodeService {
     private void invalidateCache(Long episodeId) {
         redisTemplate.delete("episode:" + episodeId);
         redisTemplate.delete("episode:" + episodeId + ":stream");
+    }
+
+    // Helper method to get API base URL for HLS endpoints
+    private String getApiBaseUrl() {
+        return apiBaseUrl + "/api/v1/files/hls";
     }
 }

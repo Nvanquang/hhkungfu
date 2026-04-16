@@ -77,6 +77,10 @@ security:
       access-token-validity-in-seconds: ${ACCESS-TOKEN-VALIDITY-IN-SECONDS}
       refresh-token-validity-in-seconds: ${REFRESH-TOKEN-VALIDITY-IN-SECONDS}
 
+app:
+  api:
+    base-url: ${APP_API_BASE_URL:http://localhost:8080}
+
 ffmpeg:
   path: ${FFMPEG_PATH}
   ffprobe:

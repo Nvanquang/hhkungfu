@@ -1,5 +1,6 @@
 package com.hhkungfu.backend.infrastructure.storage;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
@@ -18,6 +19,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+@Slf4j
 @Service
 @ConditionalOnProperty(name = "storage.type", havingValue = "r2")
 public class R2StorageService implements StorageService {
@@ -45,7 +47,7 @@ public class R2StorageService implements StorageService {
                 .endpointOverride(URI.create(endpoint))
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(accessKey, secretKey)))
-                .region(Region.of("auto"))
+                .region(Region.US_EAST_1)  // R2 requires US_EAST_1 region
                 .build();
     }
 
@@ -89,18 +91,22 @@ public class R2StorageService implements StorageService {
     }
 
     @Override
-    public Resource load(String path) {
+    public Resource load(String path) {        
         try {
+            log.info("R2StorageService.load() - Creating GetObject request...");
             ResponseInputStream<GetObjectResponse> s3Object = s3Client.getObject(
                     GetObjectRequest.builder()
                             .bucket(bucket)
                             .key(path)
                             .build()
             );
+            log.info("R2StorageService.load() - Successfully retrieved object from R2");
             return new InputStreamResource(s3Object);
         } catch (NoSuchKeyException e) {
+            log.error("R2StorageService.load() - File not found in R2: bucket={}, key={}", bucket, path, e);
             throw new RuntimeException("File not found in R2: " + path, e);
         } catch (Exception e) {
+            log.error("R2StorageService.load() - Error reading file from R2: bucket={}, key={}", bucket, path, e);
             throw new RuntimeException("Could not read file from R2: " + path, e);
         }
     }

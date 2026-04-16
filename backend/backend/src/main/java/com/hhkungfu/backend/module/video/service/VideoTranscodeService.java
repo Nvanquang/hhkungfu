@@ -45,6 +45,9 @@ public class VideoTranscodeService {
     @Value("${ffprobe.path}")
     private String ffprobePath;
 
+    @Value("${app.api.base-url:http://localhost:8080}")
+    private String apiBaseUrl;
+
     // Limits
     private static final double MAX_DURATION_SECONDS = 10_800; // 3 giờ
     private static final long MAX_BITRATE_BPS = 100_000_000L;  // 100 Mbps
@@ -64,7 +67,7 @@ public class VideoTranscodeService {
 
             Files.createDirectories(Path.of(outputDir));
 
-            // 🔐 Security: Validate duration, bitrate, streams TRƯỚC khi encode
+            // Security: Validate duration, bitrate, streams TRƯỚC khi encode
             validateInputFile(inputPath, job);
 
             // Encode 360p
@@ -92,7 +95,8 @@ public class VideoTranscodeService {
             saveVideoFiles(job.getEpisode().getId(), outputDir, s3Key);
 
             // Update Episode
-            String masterUrl = storageService.getBaseUrl() + "/" + job.getEpisode().getId() + "/master.m3u8";
+            String apiBaseUrl = getApiBaseUrl();
+            String masterUrl = apiBaseUrl + "/" + job.getEpisode().getId() + "/master.m3u8";
             episodeRepository.updateVideoReady(job.getEpisode().getId(), VideoStatus.READY, s3Key + "/master.m3u8",
                     masterUrl);
 
@@ -112,12 +116,12 @@ public class VideoTranscodeService {
             markJobFailed(job, "File không hợp lệ: " + e.getMessage());
             episodeRepository.updateVideoStatus(job.getEpisode().getId(), VideoStatus.FAILED);
         } catch (Exception e) {
-            // 🔐 Security: Không lộ internal error ra message
+            // Security: Không lộ internal error ra message
             log.error("Transcode failed for job {}", jobId, e);
             markJobFailed(job, "Quá trình xử lý video thất bại. Vui lòng thử lại.");
             episodeRepository.updateVideoStatus(job.getEpisode().getId(), VideoStatus.FAILED);
         } finally {
-            // 🔐 Security: Luôn xóa temp files kể cả khi fail
+            // Security: Luôn xóa temp files kể cả khi fail
             safeDelete(Path.of(inputPath));
             safeDeleteDirectory(Path.of(outputDir));
         }
@@ -136,7 +140,7 @@ public class VideoTranscodeService {
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // 🔐 Validation trước transcode
+    // Validation trước transcode
     // ─────────────────────────────────────────────────────────────────
     private void validateInputFile(String inputPath, TranscodeJob job) throws IOException {
         FFprobe ffprobe = new FFprobe(ffprobePath);
@@ -202,7 +206,7 @@ public class VideoTranscodeService {
                 .setVideoBitRate(bitrate)
                 .setAudioCodec("aac")
                 .setAudioBitRate(128_000)
-                // 🔐 Security: Strip ALL metadata (title, artist, comment, custom tags...)
+                // Security: Strip ALL metadata (title, artist, comment, custom tags...)
                 .addExtraArgs("-map_metadata", "-1")
                 .addExtraArgs("-map_chapters", "-1")
                 .addExtraArgs("-hls_time", "10")
@@ -263,7 +267,7 @@ public class VideoTranscodeService {
 
     private void markJobFailed(TranscodeJob job, String genericMessage) {
         job.setStatus(TranscodeJobStatus.FAILED);
-        job.setErrorMessage(genericMessage); // 🔐 Không lộ stack trace
+        job.setErrorMessage(genericMessage); // Không lộ stack trace
         job.setCompletedAt(LocalDateTime.now());
         transcodeJobRepository.save(job);
     }
@@ -288,5 +292,10 @@ public class VideoTranscodeService {
         } catch (IOException e) {
             log.warn("Không thể xóa temp directory: {}", path, e);
         }
+    }
+
+    // Helper method to get API base URL for HLS endpoints
+    private String getApiBaseUrl() {
+        return apiBaseUrl + "/api/v1/files/hls";
     }
 }

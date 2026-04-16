@@ -7,14 +7,13 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 
 @Service
-@ConditionalOnProperty(name = "storage.type", havingValue = "local", matchIfMissing = true)
+@ConditionalOnProperty(name = "storage.type", havingValue = "local")
 public class LocalStorageService implements StorageService {
 
     @Value("${storage.local.base-path:E:/data/hls}")
@@ -51,13 +50,13 @@ public class LocalStorageService implements StorageService {
         if (Files.exists(target)) {
             try (java.util.stream.Stream<Path> stream = Files.walk(target)) {
                 stream.sorted(Comparator.reverseOrder())
-                      .forEach(p -> {
-                          try {
-                              Files.delete(p);
-                          } catch (IOException e) {
-                              throw new RuntimeException("Failed to delete " + p, e);
-                          }
-                      });
+                        .forEach(p -> {
+                            try {
+                                Files.delete(p);
+                            } catch (IOException e) {
+                                throw new RuntimeException("Failed to delete " + p, e);
+                            }
+                        });
             }
         }
     }
@@ -71,7 +70,7 @@ public class LocalStorageService implements StorageService {
     public Resource load(String relativePath) {
         try {
             Path base = Path.of(basePath).toRealPath();
-            // 🔐 Security: Normalize path, kiểm tra không thoát ra ngoài basePath
+            // Security: Normalize path, kiểm tra không thoát ra ngoài basePath
             Path resolved = base.resolve(relativePath).normalize();
 
             if (!resolved.startsWith(base)) {

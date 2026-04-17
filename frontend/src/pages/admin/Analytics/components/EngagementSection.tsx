@@ -37,8 +37,8 @@ export function EngagementSection({
           <div>
             <p className="text-2xl font-black text-slate-900 tracking-tighter">{comments.toLocaleString()}</p>
             <div className="flex items-center gap-1.5 mt-1 font-bold text-[11px]">
-              <span className={commentsDelta >= 0 ? "text-emerald-600" : "text-rose-600"}>
-                {commentsDelta >= 0 ? "▲" : "▼"} {Math.abs(commentsDelta).toFixed(1)}%
+              <span className={commentsDelta > 0 ? "text-emerald-600" : "text-rose-600"}>
+                {commentsDelta > 0 ? "▲" : "▼"} {Math.abs(commentsDelta).toFixed(1)}%
               </span>
               <span className="text-slate-400 font-medium whitespace-nowrap">so với kỳ trước</span>
             </div>
@@ -55,8 +55,8 @@ export function EngagementSection({
           <div>
             <p className="text-2xl font-black text-slate-900 tracking-tighter">{ratings.toLocaleString()}</p>
             <div className="flex items-center gap-1.5 mt-1 font-bold text-[11px]">
-              <span className={ratingsDelta >= 0 ? "text-emerald-600" : "text-rose-600"}>
-                {ratingsDelta >= 0 ? "▲" : "▼"} {Math.abs(ratingsDelta).toFixed(1)}%
+              <span className={ratingsDelta > 0 ? "text-emerald-600" : "text-rose-600"}>
+                {ratingsDelta > 0 ? "▲" : "▼"} {Math.abs(ratingsDelta).toFixed(1)}%
               </span>
               <span className="text-slate-400 font-medium whitespace-nowrap">so với kỳ trước</span>
             </div>

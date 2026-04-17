@@ -8,6 +8,7 @@ import {
   Badge 
 } from "@/components/ui";
 import { Copy } from "lucide-react";
+import styles from './PaymentDetailModal.module.css';
 import { toast } from "sonner";
 
 interface PaymentDetailModalProps {
@@ -28,7 +29,7 @@ export function PaymentDetailModal({ payment, onClose }: PaymentDetailModalProps
       open={!!payment}
       onOpenChange={(open) => !open && onClose()}
     >
-      <DialogContent className="max-w-3xl bg-white border-none shadow-2xl p-0 overflow-hidden text-left">
+      <DialogContent className={`${styles.paymentDetailModal} bg-white border-none shadow-2xl p-0 overflow-hidden text-left`}>
         <DialogHeader className="px-6 py-4 bg-slate-50 border-b border-slate-100">
           <DialogTitle className="text-xl font-bold text-slate-900">
             Chi tiết thanh toán

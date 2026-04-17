@@ -1,0 +1,9 @@
+.paymentDetailModal {
+  width: 50vw !important;
+  max-width: none !important;
+}
+
+.paymentDetailModal [data-radix-dialog-content] {
+  width: 50vw !important;
+  max-width: none !important;
+}

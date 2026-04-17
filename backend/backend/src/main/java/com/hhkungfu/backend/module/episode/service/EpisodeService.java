@@ -25,6 +25,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -49,7 +51,10 @@ public class EpisodeService {
         var pageable = PageRequest.of(page - 1, limit, Sort.by("episodeNumber").ascending());
         Page<Episode> episodePage = episodeRepository.findByAnimeIdAndDeletedAtIsNull(animeId, pageable);
 
+        // Filter episodes that have aired (airedDate <= current date)
+        LocalDateTime now = LocalDateTime.now();
         List<EpisodeDto> items = episodePage.getContent().stream()
+                .filter(episode -> episode.getAiredDate() != null && !episode.getAiredDate().isAfter(now.toLocalDate()))
                 .map(this::toDto)
                 .collect(Collectors.toList());
 
@@ -98,7 +103,7 @@ public class EpisodeService {
                 .isVipOnly(Boolean.TRUE.equals(request.getIsVipOnly()))
                 .hasVietsub(Boolean.TRUE.equals(request.getHasVietsub()))
                 .hasEngsub(Boolean.TRUE.equals(request.getHasEngsub()))
-                .airedDate(request.getAiredDate())
+                .airedDate(request.getAiredDate() == null ? LocalDate.now() : request.getAiredDate())
                 .videoStatus(VideoStatus.PENDING)
                 .build();
 

@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -53,77 +55,102 @@ public class VideoTranscodeService {
     private static final long MAX_BITRATE_BPS = 100_000_000L;  // 100 Mbps
     private static final int MAX_STREAMS = 5;
 
+    private record VideoQuality(String name, int width, int height, int bitrate, String maxrate, String bufsize, String profile, String level, String codec) {}
+
+    private static final List<VideoQuality> QUALITIES = List.of(
+            new VideoQuality("360p", 640, 360, 800_000, "1000k", "2000k", "main", "3.0", "avc1.42e01e,mp4a.40.2"),
+            new VideoQuality("720p", 1280, 720, 2_500_000, "2800k", "5600k", "main", "3.1", "avc1.4d401f,mp4a.40.2")
+    );
+
     @Async("transcodeExecutor")
     public void runTranscode(Long jobId) {
         TranscodeJob job = transcodeJobRepository.findByIdWithEpisodeAndAnime(jobId).orElseThrow();
 
+        if (job.getStatus() == TranscodeJobStatus.DONE) return; // Idempotency check
+
         String inputPath = job.getInputPath();
         String outputDir = System.getProperty("java.io.tmpdir") + "/hls/ep-" + job.getEpisode().getId();
 
-        try {
-            job.setStatus(TranscodeJobStatus.RUNNING);
-            job.setStartedAt(LocalDateTime.now());
-            transcodeJobRepository.save(job);
+        int maxRetries = 3;
+        while (job.getRetryCount() < maxRetries) {
+            try {
+                job.setStatus(TranscodeJobStatus.RUNNING);
+                job.setStartedAt(LocalDateTime.now());
+                job.setErrorMessage(null);
+                transcodeJobRepository.save(job);
 
-            Files.createDirectories(Path.of(outputDir));
+                // Start from clean temp directory (Idempotency)
+                safeDeleteDirectory(Path.of(outputDir));
+                Files.createDirectories(Path.of(outputDir));
 
-            // Security: Validate duration, bitrate, streams TRƯỚC khi encode
-            validateInputFile(inputPath, job);
+                // 1. Security: Validate before encoding
+                validateInputFile(inputPath, job);
 
-            // Encode 360p
-            job.setCurrentStep("Encoding 360p...");
-            transcodeJobRepository.save(job);
-            runFfmpeg(inputPath, outputDir + "/360p", 640, 360, 800_000);
-            job.setProgress((short) 50);
-            transcodeJobRepository.save(job);
+                // 2. Encode Qualities with Weighted Progress
+                long totalBitrate = QUALITIES.stream().mapToLong(VideoQuality::bitrate).sum();
+                int baseProgress = 10; // First 10% for validation
 
-            // Encode 720p
-            job.setCurrentStep("Encoding 720p...");
-            transcodeJobRepository.save(job);
-            runFfmpeg(inputPath, outputDir + "/720p", 1280, 720, 2_500_000);
-            job.setProgress((short) 90);
-            transcodeJobRepository.save(job);
+                for (var quality : QUALITIES) {
+                    job.setCurrentStep("Encoding " + quality.name() + "...");
+                    transcodeJobRepository.save(job);
 
-            // Master Playlist
-            createMasterPlaylist(outputDir);
+                    runFfmpeg(inputPath, outputDir + "/" + quality.name(), quality);
 
-            // Upload
-            String s3Key = "ep-" + job.getEpisode().getId();
-            storageService.uploadDirectory(outputDir, s3Key);
+                    // Weighted progress: 720p takes longer than 360p
+                    int weight = (int) (80 * quality.bitrate() / totalBitrate);
+                    baseProgress += weight;
+                    job.setProgress((short) Math.min(90, baseProgress));
+                    transcodeJobRepository.save(job);
+                }
 
-            // Save VideoFiles to DB
-            saveVideoFiles(job.getEpisode().getId(), outputDir, s3Key);
+                // 3. Create Master Playlist
+                job.setCurrentStep("Generating playlists...");
+                createMasterPlaylist(outputDir);
 
-            // Update Episode
-            String apiBaseUrl = getApiBaseUrl();
-            String masterUrl = apiBaseUrl + "/" + job.getEpisode().getId() + "/master.m3u8";
-            episodeRepository.updateVideoReady(job.getEpisode().getId(), VideoStatus.READY, s3Key + "/master.m3u8",
-                    masterUrl);
+                // 4. Upload & Finalize
+                String s3Key = "ep-" + job.getEpisode().getId();
+                storageService.uploadDirectory(outputDir, s3Key);
 
-            // Update Anime updatedAt
-            animeRepository.touchUpdatedAt(job.getEpisode().getAnime().getId());
+                // 5. Save VideoFiles to DB (Optimized: No slow disk scanning)
+                saveVideoFiles(job.getEpisode().getId(), outputDir, s3Key);
 
-            // Done
-            job.setStatus(TranscodeJobStatus.DONE);
-            job.setProgress((short) 100);
-            job.setCurrentStep("Completed");
-            job.setCompletedAt(LocalDateTime.now());
-            transcodeJobRepository.save(job);
+                // 6. Complete Episode & Job
+                String apiBaseUrl = getApiBaseUrl();
+                String masterUrl = apiBaseUrl + "/" + job.getEpisode().getId() + "/master.m3u8";
+                episodeRepository.updateVideoReady(job.getEpisode().getId(), VideoStatus.READY, s3Key + "/master.m3u8",
+                        masterUrl);
+                animeRepository.touchUpdatedAt(job.getEpisode().getAnime().getId());
 
-        } catch (BusinessException e) {
-            // Validation error — log + thông báo cụ thể
-            log.warn("[VideoSecurity] Validation thất bại cho job {}: {}", jobId, e.getMessage());
-            markJobFailed(job, "File không hợp lệ: " + e.getMessage());
-            episodeRepository.updateVideoStatus(job.getEpisode().getId(), VideoStatus.FAILED);
-        } catch (Exception e) {
-            // Security: Không lộ internal error ra message
-            log.error("Transcode failed for job {}", jobId, e);
-            markJobFailed(job, "Quá trình xử lý video thất bại. Vui lòng thử lại.");
-            episodeRepository.updateVideoStatus(job.getEpisode().getId(), VideoStatus.FAILED);
-        } finally {
-            // Security: Luôn xóa temp files kể cả khi fail
-            safeDelete(Path.of(inputPath));
-            safeDeleteDirectory(Path.of(outputDir));
+                job.setStatus(TranscodeJobStatus.DONE);
+                job.setProgress((short) 100);
+                job.setCurrentStep("Completed");
+                job.setCompletedAt(LocalDateTime.now());
+                transcodeJobRepository.save(job);
+
+                log.info("[VideoTranscode] Job {} completed successfully after {} attempts", jobId, job.getRetryCount() + 1);
+                return; // Break retry loop on success
+
+            } catch (Exception e) {
+                int currentAttempt = job.getRetryCount() + 1;
+                job.setRetryCount(currentAttempt);
+                log.error("[VideoTranscode] Attempt {} failed for job {}", currentAttempt, jobId, e);
+
+                if (currentAttempt >= maxRetries) {
+                    markJobFailed(job, e instanceof BusinessException ? e.getMessage() : "Quá trình xử lý video thất bại sau " + maxRetries + " lần thử.");
+                    episodeRepository.updateVideoStatus(job.getEpisode().getId(), VideoStatus.FAILED);
+                } else {
+                    job.setCurrentStep("Retrying (Attempt " + (currentAttempt + 1) + ")...");
+                    transcodeJobRepository.save(job);
+                    // Small delay before retry
+                    try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+                }
+            } finally {
+                // Security: Clean up input temp file only on final attempt or success
+                if (job.getStatus() != TranscodeJobStatus.RUNNING) {
+                    safeDelete(Path.of(inputPath));
+                    safeDeleteDirectory(Path.of(outputDir));
+                }
+            }
         }
     }
 
@@ -192,7 +219,7 @@ public class VideoTranscodeService {
     // ─────────────────────────────────────────────────────────────────
     // FFmpeg encode với metadata stripping
     // ─────────────────────────────────────────────────────────────────
-    private void runFfmpeg(String inputPath, String outputDir, int width, int height, int bitrate) throws IOException {
+    private void runFfmpeg(String inputPath, String outputDir, VideoQuality quality) throws IOException {
         Files.createDirectories(Path.of(outputDir));
         FFmpeg ffmpeg = new FFmpeg(ffmpegPath);
         FFprobe ffprobe = new FFprobe(ffprobePath);
@@ -202,24 +229,42 @@ public class VideoTranscodeService {
                 .overrideOutputFiles(true)
                 .addOutput(outputDir + "/index.m3u8")
                 .setVideoCodec("libx264")
-                .setVideoFilter("scale=" + width + ":" + height)
-                .setVideoBitRate(bitrate)
+                .setVideoFilter("scale=" + quality.width() + ":" + quality.height())
+                .setVideoBitRate(quality.bitrate())
                 .setAudioCodec("aac")
                 .setAudioBitRate(128_000)
                 // Security: Strip ALL metadata (title, artist, comment, custom tags...)
                 .addExtraArgs("-map_metadata", "-1")
                 .addExtraArgs("-map_chapters", "-1")
+                .addExtraArgs("-preset", "fast")
+                .addExtraArgs("-crf", "23")
+                // Bitrate capping (CRF + Maxrate)
+                .addExtraArgs("-maxrate", quality.maxrate())
+                .addExtraArgs("-bufsize", quality.bufsize())
+                // Compatibility profile & level
+                .addExtraArgs("-profile:v", quality.profile())
+                .addExtraArgs("-level", quality.level())
+                // Smoothness & ABR alignment
+                .addExtraArgs("-g", "48")
+                .addExtraArgs("-keyint_min", "48")
+                .addExtraArgs("-sc_threshold", "0")
+                .addExtraArgs("-threads", "2")
+                // Playback speed
+                .addExtraArgs("-movflags", "+faststart")
+                // HLS settings
                 .addExtraArgs("-hls_time", "10")
                 .addExtraArgs("-hls_list_size", "0")
-                .addExtraArgs("-hls_segment_type", "mpegts")
-                .addExtraArgs("-hls_segment_filename", outputDir + "/seg%03d.ts")
+                .addExtraArgs("-hls_playlist_type", "vod")
+                .addExtraArgs("-hls_segment_type", "fmp4")
+                .addExtraArgs("-hls_fmp4_init_filename", "init.mp4")
+                .addExtraArgs("-hls_segment_filename", outputDir + "/seg%03d.m4s")
                 .done();
 
         net.bramp.ffmpeg.FFmpegExecutor executor = new net.bramp.ffmpeg.FFmpegExecutor(ffmpeg, ffprobe);
         FFmpegJob job = executor.createJob(builder);
         job.run();
         if (job.getState() == FFmpegJob.State.FAILED) {
-            throw new RuntimeException("FFmpeg job failed for resolution " + height + "p");
+            throw new RuntimeException("FFmpeg job failed for resolution " + quality.height() + "p");
         }
     }
 
@@ -227,41 +272,77 @@ public class VideoTranscodeService {
     // Helpers
     // ─────────────────────────────────────────────────────────────────
     private void createMasterPlaylist(String outputDir) throws IOException {
-        String content = "#EXTM3U\n" +
-                "#EXT-X-VERSION:3\n" +
-                "#EXT-X-STREAM-INF:BANDWIDTH=800000,RESOLUTION=640x360\n" +
-                "360p/index.m3u8\n" +
-                "#EXT-X-STREAM-INF:BANDWIDTH=2500000,RESOLUTION=1280x720\n" +
-                "720p/index.m3u8\n";
-        Files.writeString(Path.of(outputDir, "master.m3u8"), content);
+        StringBuilder content = new StringBuilder("#EXTM3U\n#EXT-X-VERSION:6\n");
+
+        for (var q : QUALITIES) {
+            content.append(String.format(
+                    "#EXT-X-STREAM-INF:BANDWIDTH=%d,RESOLUTION=%dx%d,CODECS=\"%s\",FRAME-RATE=30\n",
+                    q.bitrate(), q.width(), q.height(), q.codec()
+            ));
+            content.append(q.name()).append("/index.m3u8\n");
+        }
+
+        Files.writeString(Path.of(outputDir, "master.m3u8"), content.toString());
     }
 
     private void saveVideoFiles(Long episodeId, String localDir, String s3Key) throws IOException {
         videoFileRepository.deleteByEpisodeId(episodeId);
 
-        try (java.util.stream.Stream<Path> stream = Files.walk(Path.of(localDir))) {
-            stream.filter(Files::isRegularFile)
-                    .forEach(file -> {
-                        String fileName = file.getFileName().toString();
-                        String relativePath = Path.of(localDir).relativize(file).toString().replace("\\", "/");
-                        String quality = relativePath.contains("360p") ? "360p"
-                                : (relativePath.contains("720p") ? "720p" : "master");
-                        FileType type = fileName.endsWith(".m3u8") ? FileType.PLAYLIST : FileType.SEGMENT;
+        var episode = episodeRepository.getReferenceById(episodeId);
+        List<VideoFile> videoFiles = new ArrayList<>();
 
-                        try {
-                            VideoFile vf = VideoFile.builder()
-                                    .episode(episodeRepository.getReferenceById(episodeId))
-                                    .quality(quality)
-                                    .filePath(s3Key + "/" + relativePath)
-                                    .fileType(type)
-                                    .fileName(fileName)
-                                    .fileSize(Files.size(file))
-                                    .build();
-                            videoFileRepository.save(vf);
-                        } catch (IOException e) {
-                            log.error("Failed to read file size", e);
-                        }
-                    });
+        // Optimized: Save explicit entry points only (no disk scanning)
+        
+        // 1. Master Playlist
+        Path masterPath = Path.of(localDir, "master.m3u8");
+        if (Files.exists(masterPath)) {
+            videoFiles.add(VideoFile.builder()
+                    .episode(episode)
+                    .quality("master")
+                    .filePath(s3Key + "/master.m3u8")
+                    .fileType(FileType.PLAYLIST)
+                    .fileName("master.m3u8")
+                    .fileSize(Files.size(masterPath))
+                    .build());
+        }
+
+        // 2. Individual Quality Playlists & Init segments
+        for (var q : QUALITIES) {
+            // Quality index (playlist)
+            Path qPath = Path.of(localDir, q.name(), "index.m3u8");
+            if (Files.exists(qPath)) {
+                videoFiles.add(VideoFile.builder()
+                        .episode(episode)
+                        .quality(q.name())
+                        .filePath(s3Key + "/" + q.name() + "/index.m3u8")
+                        .fileType(FileType.PLAYLIST)
+                        .fileName("index.m3u8")
+                        .fileSize(Files.size(qPath))
+                        .width(q.width())
+                        .height(q.height())
+                        .bitrate((long) q.bitrate())
+                        .build());
+            }
+
+            // Init segment (required for fMP4 playback)
+            Path initPath = Path.of(localDir, q.name(), "init.mp4");
+            if (Files.exists(initPath)) {
+                videoFiles.add(VideoFile.builder()
+                        .episode(episode)
+                        .quality(q.name())
+                        .filePath(s3Key + "/" + q.name() + "/init.mp4")
+                        .fileType(FileType.SEGMENT)
+                        .fileName("init.mp4")
+                        .fileSize(Files.size(initPath))
+                        .width(q.width())
+                        .height(q.height())
+                        .bitrate((long) q.bitrate())
+                        .build());
+            }
+        }
+
+        if (!videoFiles.isEmpty()) {
+            videoFileRepository.saveAll(videoFiles);
         }
     }
 

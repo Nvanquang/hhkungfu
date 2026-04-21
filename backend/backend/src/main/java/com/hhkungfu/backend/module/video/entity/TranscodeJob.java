@@ -52,6 +52,10 @@ public class TranscodeJob {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Column(name = "retry_count")
+    @Builder.Default
+    private Integer retryCount = 0;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;

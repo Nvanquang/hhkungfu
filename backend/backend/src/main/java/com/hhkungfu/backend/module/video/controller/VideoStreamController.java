@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,71 +22,67 @@ public class VideoStreamController {
 
     private final VideoStreamService videoStreamService;
 
-    // Security: Whitelist quality values — ngăn path traversal qua tham số quality
+    // Security: Whitelist quality values
     private static final Set<String> ALLOWED_QUALITIES = Set.of("360p", "480p", "720p", "1080p");
 
-    // Security: Chỉ cho phép segment name an toàn (chữ cái, số, dấu gạch dưới/ngang)
-    private static final Pattern SAFE_SEGMENT_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]{1,50}$");
+    // Security: Pattern for safe file names (index.m3u8, init.mp4, seg000.m4s, etc)
+    private static final Pattern SAFE_FILE_PATTERN = Pattern.compile("^[a-zA-Z0-9_.-]{1,50}$");
 
     @GetMapping("/{episodeId}/master.m3u8")
     @Operation(summary = "Serve master.m3u8 playlist")
     public ResponseEntity<Resource> getMasterPlaylist(@PathVariable(name = "episodeId") Long episodeId) {
-        // episodeId là Long — type-safe, không cần thêm validation
         Resource resource = videoStreamService.loadHlsFile("ep-" + episodeId + "/master.m3u8");
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, "application/vnd.apple.mpegurl")
-                // Security: Không cache playlist trên client (dễ stale)
                 .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store")
                 .body(resource);
     }
 
-    @GetMapping("/{episodeId}/{quality}/index.m3u8")
-    @Operation(summary = "Serve quality-specific playlist")
-    public ResponseEntity<Resource> getQualityPlaylist(
-            @PathVariable(name = "episodeId") Long episodeId,
-            @PathVariable(name = "quality") String quality) {
-
-        // Security: Validate quality whitelist
-        if (!ALLOWED_QUALITIES.contains(quality)) {
-            log.warn("[VideoSecurity] Path traversal attempt via quality param: episodeId={}, quality='{}'",
-                    episodeId, quality);
-            return ResponseEntity.badRequest().build();
-        }
-
-        Resource resource = videoStreamService.loadHlsFile("ep-" + episodeId + "/" + quality + "/index.m3u8");
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_TYPE, "application/vnd.apple.mpegurl")
-                .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store")
-                .body(resource);
-    }
-
-    @GetMapping("/{episodeId}/{quality}/{segment}.ts")
-    @Operation(summary = "Serve .ts video segment (supports Range requests)")
-    public ResponseEntity<Resource> getSegment(
+    @GetMapping("/{episodeId}/{quality}/{fileName}")
+    @Operation(summary = "Serve HLS components (index.m3u8, init.mp4, segments)")
+    public ResponseEntity<Resource> getHlsComponent(
             @PathVariable(name = "episodeId") Long episodeId,
             @PathVariable(name = "quality") String quality,
-            @PathVariable(name = "segment") String segment,
-            @RequestHeader(value = HttpHeaders.RANGE, required = false) String range) {
+            @PathVariable(name = "fileName") String fileName) {
 
-        // Security: Validate quality whitelist
+        // 1. Security: Validate quality
         if (!ALLOWED_QUALITIES.contains(quality)) {
             log.warn("[VideoSecurity] Invalid quality param: episodeId={}, quality='{}'", episodeId, quality);
             return ResponseEntity.badRequest().build();
         }
 
-        // Security: Validate segment name (chống path traversal qua ../../)
-        if (!SAFE_SEGMENT_PATTERN.matcher(segment).matches()) {
-            log.warn("[VideoSecurity] Suspicious segment name: episodeId={}, segment='{}'", episodeId, segment);
+        // 2. Security: Validate filename to prevent path traversal
+        if (!SAFE_FILE_PATTERN.matcher(fileName).matches()) {
+            log.warn("[VideoSecurity] Suspicious filename: episodeId={}, fileName='{}'", episodeId, fileName);
             return ResponseEntity.badRequest().build();
         }
 
-        String safePath = "ep-" + episodeId + "/" + quality + "/" + segment + ".ts";
+        // 3. Load file
+        String safePath = "ep-" + episodeId + "/" + quality + "/" + fileName;
         Resource resource = videoStreamService.loadHlsFile(safePath);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.parseMediaType("video/mp2t").toString())
-                .header(HttpHeaders.ACCEPT_RANGES, "bytes")
-                // Security: Cache segments (content immutable) — nhưng không cache lâu quá
-                .header(HttpHeaders.CACHE_CONTROL, "private, max-age=3600")
-                .body(resource);
+
+        // 4. Determine Content-Type
+        String contentType = "application/octet-stream";
+        if (fileName.endsWith(".m3u8")) {
+            contentType = "application/vnd.apple.mpegurl";
+        } else if (fileName.endsWith(".mp4") || fileName.endsWith(".m4s")) {
+            contentType = "video/mp4";
+        } else if (fileName.endsWith(".ts")) {
+            contentType = "video/mp2t";
+        }
+
+        // 5. Build Response
+        var responseBuilder = ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, contentType)
+                .header(HttpHeaders.ACCEPT_RANGES, "bytes");
+
+        // Cache control: Playlists should not be cached, segments can be
+        if (fileName.endsWith(".m3u8")) {
+            responseBuilder.header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store");
+        } else {
+            responseBuilder.header(HttpHeaders.CACHE_CONTROL, "private, max-age=3600");
+        }
+
+        return responseBuilder.body(resource);
     }
 }

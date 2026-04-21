@@ -41,6 +41,18 @@ public class VideoFile {
     @Column(name = "file_size")
     private Long fileSize;
 
+    @Column(name = "duration")
+    private Double duration;
+
+    @Column(name = "bitrate")
+    private Long bitrate;
+
+    @Column(name = "width")
+    private Integer width;
+
+    @Column(name = "height")
+    private Integer height;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;

@@ -468,6 +468,10 @@ CREATE TABLE video_files (
     file_type    VARCHAR(10)  NOT NULL CHECK (file_type IN ('PLAYLIST','SEGMENT')),
     file_name    VARCHAR(255) NOT NULL,
     file_size    BIGINT,
+    duration     INTEGER,
+    bitrate      BIGINT,
+    width        INTEGER,
+    height       INTEGER,
     created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 -- CREATE INDEX idx_video_files_episode ON video_files (episode_id, quality);
@@ -490,6 +494,7 @@ CREATE TABLE transcode_jobs (
     error_message   TEXT,
     started_at      TIMESTAMPTZ,
     completed_at    TIMESTAMPTZ,
+    retry_count     INTEGER      NOT NULL DEFAULT 0,
     created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 -- CREATE INDEX idx_transcode_jobs_episode ON transcode_jobs (episode_id);

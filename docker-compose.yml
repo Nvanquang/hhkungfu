@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  db:
+    build:
+      context: ./db
+    image: hhkungfu-db
+    container_name: hhkungfu-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: hhkungfu
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    container_name: hhkungfu-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend/backend
+    image: hhkungfu-backend
+    container_name: hhkungfu-backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./backend/backend/.env
+    environment:
+      # Inject database connection variables via environment, overriding .env for Docker network
+      - DB_URL=jdbc:postgresql://db:5432/hhkungfu
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=123456
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    image: hhkungfu-frontend
+    container_name: hhkungfu-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - BACKEND_URL=http://backend:8080
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

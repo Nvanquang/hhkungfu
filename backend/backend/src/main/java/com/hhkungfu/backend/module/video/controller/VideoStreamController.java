@@ -3,13 +3,17 @@ package com.hhkungfu.backend.module.video.controller;
 import com.hhkungfu.backend.module.video.service.VideoStreamService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -32,6 +36,8 @@ public class VideoStreamController {
     @Operation(summary = "Serve master.m3u8 playlist")
     public ResponseEntity<Resource> getMasterPlaylist(@PathVariable(name = "episodeId") Long episodeId) {
         Resource resource = videoStreamService.loadHlsFile("ep-" + episodeId + "/master.m3u8");
+        if (resource == null) return ResponseEntity.notFound().build();
+        
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_TYPE, "application/vnd.apple.mpegurl")
                 .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store")
@@ -60,6 +66,7 @@ public class VideoStreamController {
         // 3. Load file
         String safePath = "ep-" + episodeId + "/" + quality + "/" + fileName;
         Resource resource = videoStreamService.loadHlsFile(safePath);
+        if (resource == null) return ResponseEntity.notFound().build();
 
         // 4. Determine Content-Type
         String contentType = "application/octet-stream";
@@ -84,5 +91,43 @@ public class VideoStreamController {
         }
 
         return responseBuilder.body(resource);
+    }
+
+    @GetMapping("/{episodeId}/thumbnails/{fileName}")
+    @Operation(summary = "Serve video thumbnails (sprite, vtt)")
+    public void getThumbnails(
+            @PathVariable(name = "episodeId") Long episodeId,
+            @PathVariable(name = "fileName") String fileName,
+            HttpServletResponse response) throws IOException {
+
+        // 1. Security: Validate filename
+        if (!SAFE_FILE_PATTERN.matcher(fileName).matches()) {
+            log.warn("[VideoSecurity] Suspicious thumbnail filename: episodeId={}, fileName='{}'", episodeId, fileName);
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        // 2. Load file
+        String safePath = "ep-" + episodeId + "/thumbnails/" + fileName;
+        Resource resource = videoStreamService.loadHlsFile(safePath);
+        if (resource == null) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
+
+        // 3. Determine Content-Type
+        if (fileName.endsWith(".vtt")) {
+            response.setContentType("text/vtt");
+        } else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
+            response.setContentType("image/jpeg");
+        } else {
+            response.setContentType("application/octet-stream");
+        }
+
+        // 4. Cache & stream
+        response.setHeader(HttpHeaders.CACHE_CONTROL, "public, max-age=86400");
+        try (InputStream is = resource.getInputStream()) {
+            StreamUtils.copy(is, response.getOutputStream());
+        }
     }
 }

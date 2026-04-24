@@ -29,7 +29,7 @@ export function WatchNavbar({ animeTitle, animeSlug, episodeTitle, episodeNumber
   };
 
   return (
-    <nav className="h-12 bg-black/90 border-b border-white/10 flex items-center justify-between px-4 flex-shrink-0">
+    <nav className="h-12 bg-zinc-900/90 border-b border-white/10 flex items-center justify-between px-4 flex-shrink-0">
       {/* Left: Logo + breadcrumb */}
       <div className="flex items-center gap-2 min-w-0 text-sm">
         <Link to="/" className="flex-shrink-0 flex items-center">

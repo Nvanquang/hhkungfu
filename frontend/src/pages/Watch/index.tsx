@@ -45,7 +45,7 @@ export default function Watch() {
   // Anime or episode not found
   if (isError || !episode) {
     return (
-      <div className="flex flex-col min-h-screen bg-black items-center justify-center gap-6 text-white px-6">
+      <div className="flex flex-col min-h-screen bg-zinc-900 items-center justify-center gap-6 text-white px-6">
         <div className="flex flex-col items-center gap-3 text-center">
           <AlertTriangle className="w-16 h-16 text-destructive" />
           <h1 className="text-2xl font-black tracking-tight uppercase">Không tìm thấy</h1>
@@ -79,7 +79,7 @@ export default function Watch() {
 
   return (
     // Full-height dark layout — no MainLayout header/footer
-    <div className="flex flex-col min-h-screen min-h-[100dvh] bg-black text-white overflow-x-hidden">
+    <div className="flex flex-col min-h-screen min-h-[100dvh] bg-zinc-900 text-white overflow-x-hidden">
       {/* Slim dark navbar */}
       <WatchNavbar
         animeTitle={anime?.title ?? null}
@@ -100,7 +100,7 @@ export default function Watch() {
               <Loader2 className="w-8 h-8 text-white/40 animate-spin" />
             </div>
           ) : isNotReady ? (
-            <div className="w-full aspect-video bg-black/50 flex flex-col items-center justify-center gap-3 rounded-none lg:rounded-xl">
+            <div className="w-full aspect-video bg-zinc-900/50 flex flex-col items-center justify-center gap-3 rounded-none lg:rounded-xl">
               <AlertTriangle className="w-8 h-8 text-amber-400" />
               <p className="text-sm text-white/60 text-center px-4">
                 Video của tập này chưa sẵn sàng (đang xử lý hoặc gặp lỗi).

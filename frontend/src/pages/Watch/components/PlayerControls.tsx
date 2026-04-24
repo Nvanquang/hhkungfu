@@ -11,6 +11,7 @@ import { SubtitleSelector } from "./SubtitleSelector";
 import type { StreamInfo } from "@/types/video.types";
 import type { EpisodeItem } from "@/types/episode.types";
 import type { HlsPlayerControls } from "@/hooks/useHlsPlayer";
+import { useVttThumbnails } from "@/hooks/useVttThumbnails";
 
 function formatTime(seconds: number) {
   if (isNaN(seconds) || !isFinite(seconds)) return "0:00";
@@ -28,6 +29,7 @@ interface PlayerControlsProps {
   onSeek?: (direction: "forward" | "backward") => void;
   nextEpisode: EpisodeItem | null;
   animeSlug: string;
+  vttUrl: string | null;
 }
 
 export function PlayerControls({
@@ -39,8 +41,10 @@ export function PlayerControls({
   onSeek,
   nextEpisode,
   animeSlug,
+  vttUrl,
 }: PlayerControlsProps) {
   const navigate = useNavigate();
+  const thumbnails = useVttThumbnails(vttUrl);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -179,11 +183,27 @@ export function PlayerControls({
             {/* Hover tooltip */}
             {hoverTime !== null && (
               <div
-                className="absolute bottom-full mb-2 -translate-x-1/2 px-2 py-1 bg-black/90 text-white text-[10px] font-bold rounded border border-white/20 whitespace-nowrap pointer-events-none z-10"
+                className="absolute bottom-full mb-3 -translate-x-1/2 flex flex-col items-center pointer-events-none z-20"
                 style={{ left: `${hoverPos}%` }}
               >
-                {formatTime(hoverTime)}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90" />
+                {(() => {
+                  const thumb = thumbnails.find(t => hoverTime >= t.startTime && hoverTime < t.endTime);
+                  if (!thumb) return null;
+                  return (
+                    <div 
+                      className="w-[160px] h-[90px] bg-gray-900 border-2 border-white/20 rounded shadow-2xl overflow-hidden mb-1.5"
+                      style={{
+                        backgroundImage: `url(${thumb.image})`,
+                        backgroundPosition: `-${thumb.x}px -${thumb.y}px`,
+                        backgroundSize: 'auto',
+                      }}
+                    />
+                  );
+                })()}
+                <div className="px-2.5 py-1 bg-black/90 text-white text-[11px] font-bold rounded-md border border-white/20 whitespace-nowrap shadow-xl">
+                  {formatTime(hoverTime)}
+                </div>
+                <div className="mt-[-1px] w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-black/90" />
               </div>
             )}
 

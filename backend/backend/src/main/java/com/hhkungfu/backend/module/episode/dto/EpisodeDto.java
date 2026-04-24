@@ -19,6 +19,7 @@ public class EpisodeDto {
     private Boolean isVipOnly;
     private VideoStatus videoStatus;
     private String hlsBaseUrl;
+    private String vttUrl;
     private Double durationSeconds;
     private Long fileSizeBytes;
     private Boolean hasVietsub;

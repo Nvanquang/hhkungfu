@@ -29,6 +29,8 @@ public class CustomResponseBodyAdvice implements ResponseBodyAdvice<Object> {
                     path.startsWith("/swagger") ||
                     path.startsWith("/swagger-ui") ||
                     path.startsWith("/actuator") ||
+                    path.startsWith("/api/v1/files/hls") ||
+                    path.startsWith("/error") ||
                     path.contains("api-docs"));
         } catch (Exception e) {
             return true;

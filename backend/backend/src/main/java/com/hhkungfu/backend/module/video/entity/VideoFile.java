@@ -32,7 +32,7 @@ public class VideoFile {
     private String filePath;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "file_type", length = 10, nullable = false)
+    @Column(name = "file_type", length = 20, nullable = false)
     private FileType fileType;
 
     @Column(name = "file_name", length = 255, nullable = false)

@@ -158,6 +158,7 @@ export function VideoPlayer({
           onSeek={handleSeek}
           nextEpisode={nextEpisode}
           animeSlug={animeSlug}
+          vttUrl={episode.vttUrl}
         />
       </div>
 

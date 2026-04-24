@@ -38,7 +38,7 @@ export function EpisodeListSidebar({
       </div>
 
       {/* Episode list */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20">
+      <div className="flex-1 overflow-y-auto max-h-[480px] overscroll-contain custom-scrollbar">
         {isLoading
           ? Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="px-3 py-3 border-b border-white/5 animate-pulse">

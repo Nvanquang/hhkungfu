@@ -103,7 +103,13 @@ public class VideoTranscodeService {
                     transcodeJobRepository.save(job);
                 }
 
-                // 3. Create Master Playlist
+                // 3. Generate Thumbnails (Sprite + VTT)
+                job.setCurrentStep("Generating thumbnails...");
+                transcodeJobRepository.save(job);
+                long duration = (long) validateInputFile(inputPath, job); // Reuse validation to get duration
+                generateThumbnails(inputPath, outputDir, duration);
+
+                // 4. Create Master Playlist
                 job.setCurrentStep("Generating playlists...");
                 createMasterPlaylist(outputDir);
 
@@ -169,7 +175,7 @@ public class VideoTranscodeService {
     // ─────────────────────────────────────────────────────────────────
     // Validation trước transcode
     // ─────────────────────────────────────────────────────────────────
-    private void validateInputFile(String inputPath, TranscodeJob job) throws IOException {
+    private double validateInputFile(String inputPath, TranscodeJob job) throws IOException {
         FFprobe ffprobe = new FFprobe(ffprobePath);
         FFmpegProbeResult probeResult;
 
@@ -214,6 +220,57 @@ public class VideoTranscodeService {
 
         log.info("[VideoTranscode] Input validated: duration={}s, bitrate={}bps, streams={}",
                 (int) format.duration, format.bit_rate, streams != null ? streams.size() : 0);
+        
+        return format.duration;
+    }
+
+    private void generateThumbnails(String inputPath, String outputDir, long duration) throws IOException {
+        Path thumbDir = Path.of(outputDir, "thumbnails");
+        Files.createDirectories(thumbDir);
+
+        FFmpeg ffmpeg = new FFmpeg(ffmpegPath);
+        FFprobe ffprobe = new FFprobe(ffprobePath);
+
+        // Config
+        int interval = 10; // 10 seconds per thumb
+        int columns = 10;
+        int width = 160;
+        int height = 90;
+
+        int totalThumbs = (int) Math.max(1, duration / interval);
+        int rows = (int) Math.ceil((double) totalThumbs / columns);
+
+        // 1. Generate Sprite Image
+        FFmpegBuilder builder = new FFmpegBuilder()
+                .setInput(inputPath)
+                .overrideOutputFiles(true)
+                .addOutput(thumbDir.resolve("sprite.jpg").toString())
+                .setFrames(1)
+                .setVideoFilter("select='not(mod(t," + interval + "))',scale=" + width + ":" + height + ",tile=" + columns + "x" + rows)
+                .done();
+
+        new net.bramp.ffmpeg.FFmpegExecutor(ffmpeg, ffprobe).createJob(builder).run();
+
+        // 2. Generate VTT file
+        StringBuilder vtt = new StringBuilder("WEBVTT\n\n");
+        for (int i = 0; i < totalThumbs; i++) {
+            int startSec = i * interval;
+            int endSec = Math.min((int) duration, (i + 1) * interval);
+            
+            int x = (i % columns) * width;
+            int y = (i / columns) * height;
+
+            vtt.append(formatVttTime(startSec)).append(" --> ").append(formatVttTime(endSec)).append("\n");
+            vtt.append("sprite.jpg#xywh=").append(x).append(",").append(y).append(",").append(width).append(",").append(height).append("\n\n");
+        }
+        Files.writeString(thumbDir.resolve("thumbnails.vtt"), vtt.toString());
+    }
+
+    private String formatVttTime(int seconds) {
+        int h = seconds / 3600;
+        int m = (seconds % 3600) / 60;
+        int s = seconds % 60;
+        return String.format("%02d:%02d:%02d.000", h, m, s);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -339,6 +396,31 @@ public class VideoTranscodeService {
                         .bitrate((long) q.bitrate())
                         .build());
             }
+        }
+
+        // 3. Thumbnails (Sprite & VTT)
+        Path spritePath = Path.of(localDir, "thumbnails", "sprite.jpg");
+        if (Files.exists(spritePath)) {
+            videoFiles.add(VideoFile.builder()
+                    .episode(episode)
+                    .quality("thumb")
+                    .filePath(s3Key + "/thumbnails/sprite.jpg")
+                    .fileType(FileType.SPRITE)
+                    .fileName("sprite.jpg")
+                    .fileSize(Files.size(spritePath))
+                    .build());
+        }
+
+        Path vttPath = Path.of(localDir, "thumbnails", "thumbnails.vtt");
+        if (Files.exists(vttPath)) {
+            videoFiles.add(VideoFile.builder()
+                    .episode(episode)
+                    .quality("thumb")
+                    .filePath(s3Key + "/thumbnails/thumbnails.vtt")
+                    .fileType(FileType.VTT)
+                    .fileName("thumbnails.vtt")
+                    .fileSize(Files.size(vttPath))
+                    .build());
         }
 
         if (!videoFiles.isEmpty()) {

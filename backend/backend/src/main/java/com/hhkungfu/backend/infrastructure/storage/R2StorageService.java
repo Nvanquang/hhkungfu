@@ -103,8 +103,8 @@ public class R2StorageService implements StorageService {
             log.info("R2StorageService.load() - Successfully retrieved object from R2");
             return new InputStreamResource(s3Object);
         } catch (NoSuchKeyException e) {
-            log.error("R2StorageService.load() - File not found in R2: bucket={}, key={}", bucket, path, e);
-            throw new RuntimeException("File not found in R2: " + path, e);
+            log.warn("R2StorageService.load() - File not found in R2: bucket={}, key={}", bucket, path);
+            return null;
         } catch (Exception e) {
             log.error("R2StorageService.load() - Error reading file from R2: bucket={}, key={}", bucket, path, e);
             throw new RuntimeException("Could not read file from R2: " + path, e);
@@ -114,6 +114,8 @@ public class R2StorageService implements StorageService {
     private String detectContentType(String fileName) {
         if (fileName.endsWith(".m3u8")) return "application/vnd.apple.mpegurl";
         if (fileName.endsWith(".ts")) return "video/mp2t";
+        if (fileName.endsWith(".vtt")) return "text/vtt";
+        if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) return "image/jpeg";
         return "application/octet-stream";
     }
 }

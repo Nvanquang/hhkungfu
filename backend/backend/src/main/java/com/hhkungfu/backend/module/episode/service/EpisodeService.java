@@ -243,6 +243,7 @@ public class EpisodeService {
                 .isVipOnly(e.getIsVipOnly())
                 .videoStatus(e.getVideoStatus())
                 .hlsBaseUrl(e.getHlsBaseUrl())
+                .vttUrl(e.getVideoStatus() == VideoStatus.READY ? getApiBaseUrl() + "/" + e.getId() + "/thumbnails/thumbnails.vtt" : null)
                 .durationSeconds(e.getDurationSeconds())
                 .fileSizeBytes(e.getFileSizeBytes())
                 .hasVietsub(e.getHasVietsub())

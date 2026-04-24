@@ -16,6 +16,7 @@ export interface EpisodeItem {
   isVipOnly: boolean;
   videoStatus: VideoStatus;
   hlsBaseUrl: string | null;
+  vttUrl: string | null;
   durationSeconds: number | null;
   fileSizeBytes: number | null;
   hasVietsub: boolean;

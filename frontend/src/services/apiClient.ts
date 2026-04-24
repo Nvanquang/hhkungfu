@@ -98,7 +98,8 @@ api.interceptors.response.use(
     //   • all 401s (handled silently by the refresh flow below)
     const isSilentUrl =
       SKIP_REFRESH_URLS.some((u) => url.includes(u)) ||
-      url.includes("/auth/me");
+      url.includes("/auth/me") ||
+      url.includes("/thumbnails/");
     const shouldShowToast = !isSilentUrl && status !== 401;
 
     if (shouldShowToast && status && status >= 400) {

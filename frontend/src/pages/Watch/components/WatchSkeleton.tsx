@@ -1,6 +1,6 @@
 export function WatchSkeleton() {
   return (
-    <div className="flex flex-col h-screen bg-black animate-pulse">
+    <div className="flex flex-col h-screen bg-zinc-900 animate-pulse">
       {/* Navbar skeleton */}
       <div className="h-12 bg-white/5 border-b border-white/10 flex items-center px-4 gap-3">
         <div className="w-24 h-5 bg-white/10 rounded" />

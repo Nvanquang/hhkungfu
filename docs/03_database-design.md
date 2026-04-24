@@ -465,7 +465,7 @@ CREATE TABLE video_files (
     episode_id   BIGINT       NOT NULL REFERENCES episodes(id) ON DELETE CASCADE,
     quality      VARCHAR(10)  NOT NULL CHECK (quality IN ('360p','720p','1080p')),
     file_path    VARCHAR(500) NOT NULL,
-    file_type    VARCHAR(10)  NOT NULL CHECK (file_type IN ('PLAYLIST','SEGMENT')),
+    file_type    VARCHAR(20)  NOT NULL CHECK (file_type IN ('PLAYLIST','SEGMENT', 'THUMBNAIL', 'SPRITE', 'VTT')),
     file_name    VARCHAR(255) NOT NULL,
     file_size    BIGINT,
     duration     INTEGER,

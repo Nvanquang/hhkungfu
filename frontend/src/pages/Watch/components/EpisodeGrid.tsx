@@ -33,7 +33,7 @@ export function EpisodeGrid({ animeSlug, episodes, currentEpisodeNumber, progres
       {!collapsed && (
         <div className="p-3">
           {/* Grid of episode pills */}
-          <div className="grid grid-cols-5 gap-2 sm:grid-cols-8">
+          <div className="grid grid-cols-5 gap-2 sm:grid-cols-8 max-h-[300px] overflow-y-auto overscroll-contain custom-scrollbar pr-1">
             {episodes.map((ep) => {
               const isCurrent = ep.episodeNumber === currentEpisodeNumber;
               const isVip = ep.isVipOnly;

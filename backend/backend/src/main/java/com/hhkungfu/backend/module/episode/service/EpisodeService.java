@@ -15,6 +15,7 @@ import com.hhkungfu.backend.module.episode.repository.EpisodeRepository;
 import com.hhkungfu.backend.module.episode.repository.SubtitleRepository;
 import com.hhkungfu.backend.module.video.dto.StreamInfoDto;
 import com.hhkungfu.backend.module.video.enums.VideoStatus;
+import com.hhkungfu.backend.module.video.service.VideoTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,6 +45,7 @@ public class EpisodeService {
     @Value("${app.api.base-url:http://localhost:8080}")
     private String apiBaseUrl;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final VideoTokenService videoTokenService;
 
     // ── CRUD ──────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
@@ -148,11 +150,14 @@ public class EpisodeService {
             }
         }
 
+        // Generate token
+        String token = videoTokenService.generateToken(episodeId, userId != null ? userId.toString() : null);
+
         // Increment counters
         redisTemplate.opsForValue().increment("viewcount:ep:" + episodeId);
         redisTemplate.opsForZSet().incrementScore("anime:trending", ep.getAnime().getId().toString(), 1.0);
 
-        return buildStreamInfo(ep);
+        return buildStreamInfo(ep, token);
     }
 
     // ── View Count ───────────────────────────────────────────────────────
@@ -189,7 +194,7 @@ public class EpisodeService {
     }
 
     // ── Private helpers ──────────────────────────────────────────────────
-    private StreamInfoDto buildStreamInfo(Episode ep) {
+    private StreamInfoDto buildStreamInfo(Episode ep, String token) {
         String hlsBaseUrl = ep.getHlsBaseUrl();
         String masterUrl;
         String baseDir;
@@ -207,6 +212,10 @@ public class EpisodeService {
             String apiBaseUrl = getApiBaseUrl();
             baseDir = apiBaseUrl + "/" + ep.getId();
             masterUrl = baseDir + "/master.m3u8";
+        }
+
+        if (token != null) {
+            masterUrl += "?token=" + token;
         }
 
         List<StreamInfoDto.QualityDto> qualities = new ArrayList<>();

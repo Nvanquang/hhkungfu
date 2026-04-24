@@ -82,10 +82,10 @@ public class LocalStorageService implements StorageService {
             if (resource.exists() && resource.isReadable()) {
                 return resource;
             } else {
-                throw new RuntimeException("Could not read file: " + relativePath);
+                return null;
             }
         } catch (java.io.IOException e) {
-            throw new RuntimeException("Could not read file: " + relativePath, e);
+            return null;
         }
     }
 }

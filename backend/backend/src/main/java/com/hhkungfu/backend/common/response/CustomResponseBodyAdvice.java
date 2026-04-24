@@ -21,7 +21,7 @@ public class CustomResponseBodyAdvice implements ResponseBodyAdvice<Object> {
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
         try {
-            String path = ((ServletWebRequest) RequestContextHolder.getRequestAttributes())
+            String path = ((org.springframework.web.context.request.ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
                     .getRequest()
                     .getRequestURI();
 
@@ -57,6 +57,10 @@ public class CustomResponseBodyAdvice implements ResponseBodyAdvice<Object> {
         }
 
         if (selectedContentType != null && !selectedContentType.includes(MediaType.APPLICATION_JSON) && status < 400) {
+            return body;
+        }
+
+        if (selectedConverterType != null && !org.springframework.http.converter.json.MappingJackson2HttpMessageConverter.class.isAssignableFrom(selectedConverterType)) {
             return body;
         }
 

@@ -32,9 +32,10 @@ public class EpisodeController {
     public ResponseEntity<PageResponse<EpisodeDto>> getEpisodes(
             @PathVariable(name = "animeId") Long animeId,
             @RequestParam(name = "page", defaultValue = "1") int page,
-            @RequestParam(name = "limit", defaultValue = "50") int limit) {
+            @RequestParam(name = "limit", defaultValue = "50") int limit,
+            @RequestParam(name = "sort", defaultValue = "asc") String sort) {
         log.info("REST request to get episodes for anime {}", animeId);
-        return ResponseEntity.ok(episodeService.getEpisodesByAnime(animeId, page, limit));
+        return ResponseEntity.ok(episodeService.getEpisodesByAnime(animeId, page, limit, sort));
     }
 
     @GetMapping("/animes/{animeId}/episodes/{episodeNumber}")

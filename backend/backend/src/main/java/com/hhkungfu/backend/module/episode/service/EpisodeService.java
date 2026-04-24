@@ -49,8 +49,9 @@ public class EpisodeService {
 
     // ── CRUD ──────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
-    public PageResponse<EpisodeDto> getEpisodesByAnime(Long animeId, int page, int limit) {
-        var pageable = PageRequest.of(page - 1, limit, Sort.by("episodeNumber").ascending());
+    public PageResponse<EpisodeDto> getEpisodesByAnime(Long animeId, int page, int limit, String sort) {
+        Sort.Direction direction = "desc".equalsIgnoreCase(sort) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        var pageable = PageRequest.of(page - 1, limit, Sort.by(direction, "episodeNumber"));
         Page<Episode> episodePage = episodeRepository.findByAnimeIdAndDeletedAtIsNull(animeId, pageable);
 
         // Filter episodes that have aired (airedDate <= current date)

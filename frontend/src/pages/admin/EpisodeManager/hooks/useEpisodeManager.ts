@@ -44,7 +44,7 @@ export const useEpisodeManager = (animeId: number) => {
 
   const episodesQuery = useQuery({
     queryKey: ["admin", "episodes", animeId],
-    queryFn: () => watchService.getEpisodes(animeId, { page: 1, limit: 200, order: "asc" }),
+    queryFn: () => watchService.getEpisodes(animeId, { page: 1, limit: 20, sort: "desc" }),
     enabled: animeId > 0,
     refetchOnWindowFocus: false, // Không tải lại khi quay lại tab
     staleTime: 5 * 60 * 1000,    // Giữ dữ liệu "tươi" trong 5 phút

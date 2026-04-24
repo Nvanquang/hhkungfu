@@ -9,7 +9,6 @@ import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -21,7 +20,8 @@ public class CustomResponseBodyAdvice implements ResponseBodyAdvice<Object> {
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
         try {
-            String path = ((org.springframework.web.context.request.ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
+            String path = ((org.springframework.web.context.request.ServletRequestAttributes) RequestContextHolder
+                    .getRequestAttributes())
                     .getRequest()
                     .getRequestURI();
 
@@ -60,7 +60,9 @@ public class CustomResponseBodyAdvice implements ResponseBodyAdvice<Object> {
             return body;
         }
 
-        if (selectedConverterType != null && !org.springframework.http.converter.json.MappingJackson2HttpMessageConverter.class.isAssignableFrom(selectedConverterType)) {
+        if (selectedConverterType != null
+                && !org.springframework.http.converter.json.MappingJackson2HttpMessageConverter.class
+                        .isAssignableFrom(selectedConverterType)) {
             return body;
         }
 

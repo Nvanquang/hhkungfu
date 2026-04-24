@@ -41,7 +41,7 @@ export interface EpisodeListResponse {
 export interface EpisodeQueryParams {
   page?: number;
   limit?: number;
-  order?: 'asc' | 'desc';
+  sort?: 'asc' | 'desc';
 }
 
 export interface CreateEpisodeRequest {

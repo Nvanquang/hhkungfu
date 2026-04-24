@@ -32,7 +32,7 @@ export function useWatch(animeSlug: string, episodeNumberStr: string) {
   // Step 2b: Fetch full episodes list for sidebar (NON-blocking, runs in parallel with stream-info)
   const episodesQuery = useQuery({
     queryKey: ["episodes", animeId],
-    queryFn: () => watchService.getEpisodes(animeId!, { limit: 200, order: "asc" }),
+    queryFn: () => watchService.getEpisodes(animeId!, { limit: 200, sort: "asc" }),
     enabled: !!animeId,
     staleTime: STALE_5MIN,
   });

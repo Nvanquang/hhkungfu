@@ -29,6 +29,8 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service
@@ -86,22 +88,36 @@ public class VideoTranscodeService {
                 // 1. Security: Validate before encoding
                 validateInputFile(inputPath, job);
 
-                // 2. Encode Qualities with Weighted Progress
+                // 2. Encode Qualities in Parallel (Multithreading)
                 long totalBitrate = QUALITIES.stream().mapToLong(VideoQuality::bitrate).sum();
-                int baseProgress = 10; // First 10% for validation
+                AtomicInteger progressCounter = new AtomicInteger(10); // First 10% for validation
 
+                job.setCurrentStep("Encoding video qualities in parallel...");
+                transcodeJobRepository.save(job);
+
+                List<CompletableFuture<Void>> futures = new ArrayList<>();
                 for (var quality : QUALITIES) {
-                    job.setCurrentStep("Encoding " + quality.name() + "...");
-                    transcodeJobRepository.save(job);
+                    CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                        try {
+                            runFfmpeg(inputPath, outputDir + "/" + quality.name(), quality);
 
-                    runFfmpeg(inputPath, outputDir + "/" + quality.name(), quality);
-
-                    // Weighted progress: 720p takes longer than 360p
-                    int weight = (int) (80 * quality.bitrate() / totalBitrate);
-                    baseProgress += weight;
-                    job.setProgress((short) Math.min(90, baseProgress));
-                    transcodeJobRepository.save(job);
+                            // Update progress atomically
+                            int weight = (int) (80 * quality.bitrate() / totalBitrate);
+                            int currentProgress = progressCounter.addAndGet(weight);
+                            
+                            synchronized (job) {
+                                job.setProgress((short) Math.min(90, currentProgress));
+                                transcodeJobRepository.save(job);
+                            }
+                        } catch (IOException e) {
+                            throw new RuntimeException("Lỗi IO khi encode " + quality.name(), e);
+                        }
+                    });
+                    futures.add(future);
                 }
+
+                // Wait for all parallel tasks to finish. Throws CompletionException if any fails.
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
                 // 3. Generate Thumbnails (Sprite + VTT)
                 job.setCurrentStep("Generating thumbnails...");

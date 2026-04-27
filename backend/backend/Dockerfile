@@ -1,30 +1,33 @@
-FROM gradle:8.5-jdk17-alpine AS builder
+# ===== Build stage =====
+FROM gradle:8.5-jdk17 AS builder
 
 WORKDIR /app
 
-# Copy gradle configuration
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 COPY gradlew ./
 COPY gradlew.bat ./
-
-# Copy source code
 COPY src ./src
 
-# Build the application without running tests for faster build
 RUN chmod +x ./gradlew
 RUN ./gradlew clean build -x test --no-daemon
 
-# Run stage
-FROM eclipse-temurin:17-jre-alpine
+
+# ===== Run stage =====
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-# Copy the built jar from the builder stage
+# Cài ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+
+# Set env cho app
+ENV FFMPEG_PATH=/usr/bin/ffmpeg
+ENV FFPROBE_PATH=/usr/bin/ffprobe
+
+# Copy jar
 COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Expose the application port
 EXPOSE 8080
 
-# Run the jar file
 ENTRYPOINT ["java", "-jar", "app.jar"]
